@@ -1,0 +1,34 @@
+{
+  "name": "swap-box-web3",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "MPL",
+  "scripts": {
+    "build": "web3x-codegen && tsc",
+    "start": "yarn build && node ./dest",
+    "start:dev": "nodemon",
+    "test": "jest"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": ".*\\.test\\.ts$",
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ]
+  },
+  "dependencies": {
+    "@types/zeromq": "^4.6.1",
+    "ts-jest": "^23.10.5",
+    "typescript": "^3.3.3",
+    "web3x": "^3.0.0",
+    "zeromq": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.12",
+    "jest": "^23.6.0",
+    "nodemon": "^1.18.5"
+  }
+}

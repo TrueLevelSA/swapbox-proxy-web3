@@ -1,0 +1,14 @@
+{
+  "outputPath": "./src/contracts",
+  "contracts": {
+    "MkrContract": {
+      "source": "etherscan",
+      "net": "mainnet",
+      "address": "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2"
+    },
+    "UniswapMkrExchange": {
+      "source": "files",
+      "abiFile": "uniswap_exchange.json"
+    }
+  }
+}

@@ -3,7 +3,7 @@ import { Address } from "web3x/address";
 import { EventLog, TransactionReceipt } from "web3x/formatters";
 import { Contract, ContractOptions, TxCall, TxSend, TxDeploy, EventSubscriptionFactory } from "web3x/contract";
 import { Eth } from "web3x/eth";
-import abi from "./UniswapMkrExchangeAbi";
+import abi from "./UniswapExchangeAbi";
 export type TokenPurchaseEvent = {
     buyer: Address;
     eth_sold: string;
@@ -46,7 +46,7 @@ export interface TransferEventLog extends EventLog<TransferEvent, "Transfer"> {
 }
 export interface ApprovalEventLog extends EventLog<ApprovalEvent, "Approval"> {
 }
-interface UniswapMkrExchangeEvents {
+interface UniswapExchangeEvents {
     TokenPurchase: EventSubscriptionFactory<TokenPurchaseEventLog>;
     EthPurchase: EventSubscriptionFactory<EthPurchaseEventLog>;
     AddLiquidity: EventSubscriptionFactory<AddLiquidityEventLog>;
@@ -54,7 +54,7 @@ interface UniswapMkrExchangeEvents {
     Transfer: EventSubscriptionFactory<TransferEventLog>;
     Approval: EventSubscriptionFactory<ApprovalEventLog>;
 }
-interface UniswapMkrExchangeEventLogs {
+interface UniswapExchangeEventLogs {
     TokenPurchase: TokenPurchaseEventLog;
     EthPurchase: EthPurchaseEventLog;
     AddLiquidity: AddLiquidityEventLog;
@@ -62,7 +62,7 @@ interface UniswapMkrExchangeEventLogs {
     Transfer: TransferEventLog;
     Approval: ApprovalEventLog;
 }
-interface UniswapMkrExchangeTxEventLogs {
+interface UniswapExchangeTxEventLogs {
     TokenPurchase: TokenPurchaseEventLog[];
     EthPurchase: EthPurchaseEventLog[];
     AddLiquidity: AddLiquidityEventLog[];
@@ -70,13 +70,13 @@ interface UniswapMkrExchangeTxEventLogs {
     Transfer: TransferEventLog[];
     Approval: ApprovalEventLog[];
 }
-export interface UniswapMkrExchangeTransactionReceipt extends TransactionReceipt<UniswapMkrExchangeTxEventLogs> {
+export interface UniswapExchangeTransactionReceipt extends TransactionReceipt<UniswapExchangeTxEventLogs> {
 }
-interface UniswapMkrExchangeMethods {
-    setup(token_addr: Address): TxSend<UniswapMkrExchangeTransactionReceipt>;
+interface UniswapExchangeMethods {
+    setup(token_addr: Address): TxSend<UniswapExchangeTransactionReceipt>;
     addLiquidity(min_liquidity: number | string | BN, max_tokens: number | string | BN, deadline: number | string | BN): TxCall<string>;
     removeLiquidity(amount: number | string | BN, min_eth: number | string | BN, min_tokens: number | string | BN, deadline: number | string | BN): TxCall<[string, string]>;
-    __default__(): TxSend<UniswapMkrExchangeTransactionReceipt>;
+    __default__(): TxSend<UniswapExchangeTransactionReceipt>;
     ethToTokenSwapInput(min_tokens: number | string | BN, deadline: number | string | BN): TxCall<string>;
     ethToTokenTransferInput(min_tokens: number | string | BN, deadline: number | string | BN, recipient: Address): TxCall<string>;
     ethToTokenSwapOutput(tokens_bought: number | string | BN, deadline: number | string | BN): TxCall<string>;
@@ -109,14 +109,14 @@ interface UniswapMkrExchangeMethods {
     decimals(): TxCall<string>;
     totalSupply(): TxCall<string>;
 }
-export interface UniswapMkrExchangeDefinition {
-    methods: UniswapMkrExchangeMethods;
-    events: UniswapMkrExchangeEvents;
-    eventLogs: UniswapMkrExchangeEventLogs;
+export interface UniswapExchangeDefinition {
+    methods: UniswapExchangeMethods;
+    events: UniswapExchangeEvents;
+    eventLogs: UniswapExchangeEventLogs;
 }
-export class UniswapMkrExchange extends Contract<UniswapMkrExchangeDefinition> {
+export class UniswapExchange extends Contract<UniswapExchangeDefinition> {
     constructor(eth: Eth, address?: Address, options?: ContractOptions) {
         super(eth, abi, address, options);
     }
 }
-export var UniswapMkrExchangeAbi = abi;
+export var UniswapExchangeAbi = abi;

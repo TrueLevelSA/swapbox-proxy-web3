@@ -6,9 +6,9 @@
       "net": "mainnet",
       "address": "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2"
     },
-    "UniswapMkrExchange": {
+    "UniswapExchange": {
       "source": "files",
-      "abiFile": "uniswap_exchange.json"
+      "abiFile": "abi/uniswap_exchange.json"
     }
   }
 }

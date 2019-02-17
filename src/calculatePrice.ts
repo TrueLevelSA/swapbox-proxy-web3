@@ -1,4 +1,4 @@
-export const tokenPrice = (input_reserve: any, output_reserve: any, input_amount: any, operator_fee: any) => {
+export const tokenPrice = (input_reserve: any, output_reserve: any, input_amount: any) => {
   try {
     const input_amount_with_fee = input_amount * 10**18 * 997;
 
@@ -13,7 +13,7 @@ export const tokenPrice = (input_reserve: any, output_reserve: any, input_amount
   }
 }
 
-export const ethPrice = (input_reserve: any, output_reserve: any, output_amount: any, operator_fee: any) => {
+export const ethPrice = (input_reserve: any, output_reserve: any, output_amount: any) => {
   try{
     const output_amount_int = output_amount * 10**18;
 

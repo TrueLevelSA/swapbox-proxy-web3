@@ -2,8 +2,10 @@ import { Address } from 'web3x/address';
 import { Eth } from 'web3x/eth';
 import { Net } from 'web3x/net';
 import { WebsocketProvider } from 'web3x/providers';
-import { fromWei, recover, sign, bufferToHex } from 'web3x/utils';
+import { fromWei, toWei, recover, sign, bufferToHex } from 'web3x/utils';
 
+// import { Atola } from './contracts/Atola';
+import { UniswapFactory } from './contracts/UniswapFactory';
 import { UniswapExchange } from './contracts/UniswapExchange';
 import { MkrContract } from './contracts/MkrContract';
 
@@ -13,8 +15,10 @@ import { ethPrice, tokenPrice } from './calculatePrice';
 import { socket } from 'zeromq';
 
 const s = socket('pub')
+const r = socket('rep')
 
 const ATOLA_CONTRACT_ADDRESS = Address.fromString('0x2c4bd064b998838076fa341a83d007fc2fa50957'); // not this
+const FACTORY_CONTRACT_ADDRESS = Address.fromString('0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95');
 const EXCHANGE_CONTRACT_ADDRESS = Address.fromString('0x2c4bd064b998838076fa341a83d007fc2fa50957');
 const TOKEN_CONTRACT_ADDRESS = Address.fromString('0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2'); //MKR
 
@@ -30,7 +34,7 @@ async function getBalances(eth, s, Contract){
 
       const tokenBalance = await Contract.methods.balanceOf(EXCHANGE_CONTRACT_ADDRESS).call();
       if (config.debug) {
-        console.log(`Balance of exchange address MKR: ${fromWei(tokenBalance, 'ether')}`);
+        console.log(`Balance of exchange address Token: ${fromWei(tokenBalance, 'ether')}`);
       }
 
       const price = ethPrice(balance, tokenBalance, 1);
@@ -44,6 +48,16 @@ async function getBalances(eth, s, Contract){
 
       s.send(['priceticker', JSON.stringify({buy_price: buyPrice, sell_price: sellPrice})])
 }
+
+async function processBuyETHOrder(eth, Contract, amount, address){
+
+      const fiatToEth = await Contract.methods.FiatToEth(toWei(amount, 'ether'), Address.fromString(address)).call();
+      if (config.debug) {
+        console.log(`fiatToEth: ${fiatToEth}`);
+      }
+      return true;
+}
+
 
 async function main() {
   // Construct necessary components.
@@ -62,11 +76,22 @@ async function main() {
 
     // Use our type safe auto generated contract.
     //const uniswapExchangeContract = new UniswapExchange(eth, EXCHANGE_CONTRACT_ADDRESS);
+    // const OperatorContract = new Atola(eth, ATOLA_CONTRACT_ADDRESS);
+    const FactoryContract = new UniswapFactory(infuraeth, FACTORY_CONTRACT_ADDRESS);
     const TokenContract = new MkrContract(infuraeth, TOKEN_CONTRACT_ADDRESS);
 
     //zmq publisher
     s.bindSync(config.zmq.url);
+    //zmq responder
+    r.bindSync(config.zmq.responder_url);
 
+    r.on('message', async function(request) {
+      console.log("Received request: [", request.toString(), "]");
+
+      // do some 'work'
+      // const success = await processBuyETHOrder(eth, OperatorContract, 10, "address");
+      r.send('success');
+    });
     // get balances on launch
     await getBalances(eth, s, TokenContract);
 

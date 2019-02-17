@@ -1,6 +1,10 @@
 {
   "outputPath": "./src/contracts",
   "contracts": {
+    "Atola": {
+      "source": "files",
+      "abiFile": "abi/atola.json"
+    },
     "MkrContract": {
       "source": "etherscan",
       "net": "mainnet",
@@ -9,6 +13,10 @@
     "UniswapExchange": {
       "source": "files",
       "abiFile": "abi/uniswap_exchange.json"
+    },
+    "UniswapFactory": {
+      "source": "files",
+      "abiFile": "abi/uniswap_factory.json"
     }
   }
 }

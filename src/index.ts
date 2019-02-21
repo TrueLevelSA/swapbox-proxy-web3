@@ -7,7 +7,7 @@ import { fromWei, toWei, recover, sign, bufferToHex } from 'web3x/utils';
 import { Atola } from './contracts/Atola';
 import { UniswapFactory } from './contracts/UniswapFactory';
 import { UniswapExchange } from './contracts/UniswapExchange';
-import { MkrContract } from './contracts/MkrContract';
+import { TokenContract } from './contracts/TokenContract';
 
 import { config } from '../config';
 import { ethPrice, tokenPrice } from './calculatePrice';
@@ -78,7 +78,7 @@ async function main() {
     //const uniswapExchangeContract = new UniswapExchange(eth, EXCHANGE_CONTRACT_ADDRESS);
     const OperatorContract = new Atola(eth, ATOLA_CONTRACT_ADDRESS);
     const FactoryContract = new UniswapFactory(infuraeth, FACTORY_CONTRACT_ADDRESS);
-    const TokenContract = new MkrContract(infuraeth, TOKEN_CONTRACT_ADDRESS);
+    const TokenContract = new TokenContract(infuraeth, TOKEN_CONTRACT_ADDRESS);
 
     //zmq publisher
     s.bindSync(config.zmq.url);

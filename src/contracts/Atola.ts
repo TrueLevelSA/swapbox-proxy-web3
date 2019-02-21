@@ -8,59 +8,60 @@ export type OwnershipTransferredEvent = {
     previousOwner: Address;
     newOwner: Address;
 };
-export type CryptoBoughtEvent = {
+export type CryptoPurchaseEvent = {
     customerAddress: Address;
     fiatAmount: string;
+    cryptoAmount: string;
 };
-export type CryptoSoldEvent = {
+export type CryptoSaleEvent = {
     customerAddress: Address;
     cryptoAmount: string;
 };
-export type CancelledRefundEvent = {
+export type RefundEvent = {
     customerAddress: Address;
     cryptoAmount: string;
 };
 export interface OwnershipTransferredEventLog extends EventLog<OwnershipTransferredEvent, "OwnershipTransferred"> {
 }
-export interface CryptoBoughtEventLog extends EventLog<CryptoBoughtEvent, "CryptoBought"> {
+export interface CryptoPurchaseEventLog extends EventLog<CryptoPurchaseEvent, "CryptoPurchase"> {
 }
-export interface CryptoSoldEventLog extends EventLog<CryptoSoldEvent, "CryptoSold"> {
+export interface CryptoSaleEventLog extends EventLog<CryptoSaleEvent, "CryptoSale"> {
 }
-export interface CancelledRefundEventLog extends EventLog<CancelledRefundEvent, "CancelledRefund"> {
+export interface RefundEventLog extends EventLog<RefundEvent, "Refund"> {
 }
 interface AtolaEvents {
     OwnershipTransferred: EventSubscriptionFactory<OwnershipTransferredEventLog>;
-    CryptoBought: EventSubscriptionFactory<CryptoBoughtEventLog>;
-    CryptoSold: EventSubscriptionFactory<CryptoSoldEventLog>;
-    CancelledRefund: EventSubscriptionFactory<CancelledRefundEventLog>;
+    CryptoPurchase: EventSubscriptionFactory<CryptoPurchaseEventLog>;
+    CryptoSale: EventSubscriptionFactory<CryptoSaleEventLog>;
+    Refund: EventSubscriptionFactory<RefundEventLog>;
 }
 interface AtolaEventLogs {
     OwnershipTransferred: OwnershipTransferredEventLog;
-    CryptoBought: CryptoBoughtEventLog;
-    CryptoSold: CryptoSoldEventLog;
-    CancelledRefund: CancelledRefundEventLog;
+    CryptoPurchase: CryptoPurchaseEventLog;
+    CryptoSale: CryptoSaleEventLog;
+    Refund: RefundEventLog;
 }
 interface AtolaTxEventLogs {
     OwnershipTransferred: OwnershipTransferredEventLog[];
-    CryptoBought: CryptoBoughtEventLog[];
-    CryptoSold: CryptoSoldEventLog[];
-    CancelledRefund: CancelledRefundEventLog[];
+    CryptoPurchase: CryptoPurchaseEventLog[];
+    CryptoSale: CryptoSaleEventLog[];
+    Refund: RefundEventLog[];
 }
 export interface AtolaTransactionReceipt extends TransactionReceipt<AtolaTxEventLogs> {
 }
 interface AtolaMethods {
-    withdrawTokens(token: Address, _amount: number | string | BN): TxSend<AtolaTransactionReceipt>;
-    EthBalanceAmount(): TxCall<string>;
-    AmountForAddress(_user: Address): TxCall<string>;
-    refund(_user: Address, _amount: number | string | BN): TxSend<AtolaTransactionReceipt>;
-    FiatToEth(_amountFiat: number | string | BN, _userAddress: Address): TxSend<AtolaTransactionReceipt>;
-    CryptoToFiat(_user: Address, _amountCrypto: number | string | BN): TxSend<AtolaTransactionReceipt>;
-    TokenBalanceAmount(): TxCall<string>;
-    modifyBtm(_newBtmAddress: Address, _state: boolean, _buyFee: number | string | BN, _sellFee: number | string | BN): TxSend<AtolaTransactionReceipt>;
-    FiatToTokens(_amountFiat: number | string | BN, _userAddress: Address): TxSend<AtolaTransactionReceipt>;
-    withdrawBaseTokens(_amount: number | string | BN): TxSend<AtolaTransactionReceipt>;
-    withdrawEth(_amount: number | string | BN): TxSend<AtolaTransactionReceipt>;
     transferOwnership(newOwner: Address): TxSend<AtolaTransactionReceipt>;
+    modifyBtm(_newBtmAddress: Address, _state: boolean, _buyFee: number | string | BN, _sellFee: number | string | BN): TxSend<AtolaTransactionReceipt>;
+    fiatToEth(_amountFiat: number | string | BN, _tolerance: number | string | BN, _userAddress: Address): TxSend<AtolaTransactionReceipt>;
+    fiatToBaseTokens(_amountFiat: number | string | BN, _userAddress: Address): TxSend<AtolaTransactionReceipt>;
+    withdrawEth(_amount: number | string | BN): TxSend<AtolaTransactionReceipt>;
+    withdrawBaseTokens(_amount: number | string | BN): TxSend<AtolaTransactionReceipt>;
+    withdrawTokens(token: Address, _amount: number | string | BN): TxSend<AtolaTransactionReceipt>;
+    TokenBalanceAmount(): TxCall<string>;
+    EthBalanceAmount(): TxCall<string>;
+    refund(_user: Address, _amount: number | string | BN): TxSend<AtolaTransactionReceipt>;
+    CryptoToFiat(_user: Address, _amountCrypto: number | string | BN, _tolerance: number | string | BN): TxSend<AtolaTransactionReceipt>;
+    AmountForAddress(_user: Address): TxCall<string>;
 }
 export interface AtolaDefinition {
     methods: AtolaMethods;

@@ -13,10 +13,20 @@ yarn
 yarn build
 ```
 
+### Configure
+Generate key:
+```
+yarn genkey
+```
+
+Add key (needs ethereum client running)
+```
+yarn addkey
+```
 
 ### Runing
 
-Ensure client is running
+Ensure ethereum client is running
 ```
 parity --light
 ```

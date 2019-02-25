@@ -5,7 +5,9 @@
   "license": "MPL",
   "scripts": {
     "build": "web3x-codegen && tsc",
-    "start": "yarn build && node ./dest",
+    "genkey": "node ./dist/src/createAccount.js",
+    "addkey": "node ./dist/src/addAccount.js",
+    "start": "yarn build && node ./dist/src",
     "start:dev": "nodemon",
     "test": "jest"
   },
@@ -21,6 +23,7 @@
   },
   "dependencies": {
     "@types/zeromq": "^4.6.1",
+    "prompt": "^1.0.0",
     "ts-jest": "^23.10.5",
     "typescript": "^3.3.3",
     "web3x": "^3.0.2",

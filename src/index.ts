@@ -51,7 +51,17 @@ async function getBalances(eth, s, Contract){
 
 async function processBuyETHOrder(eth, Contract, amount, address){
 
-      const fiatToEth = await Contract.methods.FiatToEth(toWei(amount, 'ether'), Address.fromString(address)).call();
+      // const gasEstimate = await Contract.methods
+      //               .FiatToEth(toWei(amount, 'ether'), Address.fromString(address))
+      //               .estimateGas();
+
+      // TO-DO: Get sensible gas price estimate
+      const gasPrice = 20 * 1000000000;
+      const fiatToEth = await Contract.methods
+                        .FiatToEth(toWei(amount, 'ether'), Address.fromString(address))
+                        .send({ from, gasPrice })
+                        .getReceipt();
+
       if (config.debug) {
         console.log(`fiatToEth: ${fiatToEth}`);
       }
@@ -87,10 +97,15 @@ async function main() {
 
     r.on('message', async function(request) {
       console.log("Received request: [", request.toString(), "]");
-
+      const message = JSON.parse(request)
       // do some 'work'
-      const success = await processBuyETHOrder(eth, OperatorContract, 10, "address");
-      r.send('success');
+      if (message.method == "buy"){
+        const success = await processBuyETHOrder(eth, OperatorContract, message.amount, message.address);
+        r.send('success');
+      } else {
+        r.send('invalid method');
+      }
+
     });
     // get balances on launch
     await getBalances(eth, s, TokenContract);

@@ -24,7 +24,7 @@ const TOKEN_CONTRACT_ADDRESS = Address.fromString('0x9f8f72aa9304c8b593d555f12ef
 
 const OPERATOR_FEE = 0.02;  // 2%
 
-async function getBalances(eth, s, Contract){
+async function getBalances(eth: Eth, s: socket, Contract: ERC20TokenContract){
 
       // Simple balance query.
       const balance = await eth.getBalance(EXCHANGE_CONTRACT_ADDRESS);
@@ -49,7 +49,7 @@ async function getBalances(eth, s, Contract){
       s.send(['priceticker', JSON.stringify({buy_price: buyPrice, sell_price: sellPrice})])
 }
 
-async function processBuyETHOrder(eth, Contract, amount, address){
+async function processBuyETHOrder(eth: Eth, Contract: Atola, amount: number, address: string){
 
       // const gasEstimate = await Contract.methods
       //               .FiatToEth(toWei(amount, 'ether'), Address.fromString(address))
@@ -57,9 +57,14 @@ async function processBuyETHOrder(eth, Contract, amount, address){
 
       // TO-DO: Get sensible gas price estimate
       const gasPrice = 20 * 1000000000;
+
+      // Optionally you can specify a default 'from' address.
+      const from = eth.wallet.accounts[0].address;
+
+
       const fiatToEth = await Contract.methods
                         .FiatToEth(toWei(amount, 'ether'), Address.fromString(address))
-                        .send({ from, gasPrice })
+                        .send({ from }) // , gasPrice
                         .getReceipt();
 
       if (config.debug) {

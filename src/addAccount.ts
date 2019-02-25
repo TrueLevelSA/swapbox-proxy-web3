@@ -21,7 +21,7 @@ async function main() {
 
   prompt.start();
 
-  prompt.get(properties, await async function (err, result) {
+  prompt.get(properties, await async function (err: any, result: any) {
     if (err) { console.log("Error: ", err); process.exit(1); }
 
 

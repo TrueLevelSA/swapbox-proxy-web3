@@ -22,7 +22,7 @@ const FACTORY_CONTRACT_ADDRESS = Address.fromString('0xc0a47dFe034B400B47bDaD5Fe
 const EXCHANGE_CONTRACT_ADDRESS = Address.fromString('0x2c4bd064b998838076fa341a83d007fc2fa50957');
 const TOKEN_CONTRACT_ADDRESS = Address.fromString('0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2'); //MKR
 
-const OPERATOR_FEE = 0.02;  // 2%
+const OPERATOR_FEE = 0.02;  // 2%  TO-DO look this up in smart contract
 
 async function getBalances(eth: Eth, s: socket, Contract: ERC20TokenContract){
 
@@ -63,7 +63,7 @@ async function processBuyETHOrder(eth: Eth, Contract: Atola, amount: number, add
 
 
       const fiatToEth = await Contract.methods
-                        .FiatToEth(toWei(amount, 'ether'), Address.fromString(address))
+                        .fiatToEth(toWei(amount, 'ether'), Address.fromString(address))
                         .send({ from }) // , gasPrice
                         .getReceipt();
 
@@ -73,7 +73,29 @@ async function processBuyETHOrder(eth: Eth, Contract: Atola, amount: number, add
       return true;
 }
 
-``
+async function processSellETHOrder(eth: Eth, Contract: Atola, amount: number, address: string){
+
+      // const gasEstimate = await Contract.methods
+      //               .FiatToEth(toWei(amount, 'ether'), Address.fromString(address))
+      //               .estimateGas();
+
+      // TO-DO: Get sensible gas price estimate
+      const gasPrice = 20 * 1000000000;
+
+      // Optionally you can specify a default 'from' address.
+      const from = eth.wallet.accounts[0].address;
+
+      const ethToFiat = await Contract.methods
+                        .ethToFiat(Address.fromString(address), toWei(amount, 'ether'))
+                        .send({ from }) // , gasPrice
+                        .getReceipt();
+
+      if (config.debug) {
+        console.log(`ethToFiat: ${ethToFiat}`);
+      }
+      return true;
+}
+
 async function main() {
   // Construct necessary components.
   const provider = new WebsocketProvider(config.websocket_provider.url);
@@ -102,10 +124,16 @@ async function main() {
 
     r.on('message', async function(request) {
       console.log("Received request: [", request.toString(), "]");
-      const message = JSON.parse(request)
+      const message = JSON.parse(request.toString())
       // do some 'work'
       if (message.method == "buy"){
         const success = await processBuyETHOrder(eth, OperatorContract, message.amount, message.address);
+        r.send('success');
+      } else if (message.method == "sell") {
+        // Need to make a function for startSell (listen for ethrecieved event)
+
+        // Call this function when we get the EthRecieved event
+        // const success = await processSellETHOrder(eth, OperatorContract, message.amount, message.address);
         r.send('success');
       } else {
         r.send('invalid method');
@@ -116,12 +144,12 @@ async function main() {
     await getBalances(eth, s, TokenContract);
 
     // subscribe to latest block (hopefully faster for price ticker)
-    eth.subscribe('newBlockHeaders', {}, (error, result) => {
+    eth.subscribe('newBlockHeaders', {}, (error: any, result: any) => {
       if (!error) {
         console.log("new block: ", result);
       }
     })
-    .on("data", (log) => {
+    .on("data", (log: any) => {
         if (config.debug) {
           console.log("New Block: ", bufferToHex(log.hash));
         }
@@ -132,7 +160,7 @@ async function main() {
     const subscription = await eth.subscribe('logs', {
         address: EXCHANGE_CONTRACT_ADDRESS,
         topics: [] // [web3.sha3('EthPurchase(address,uint256,uint256)'), ATOLA_CONTRACT_ADDRESS]  // filter for buyer
-    }, (error, result) => {
+    }, (error: any, result: any) => {
         if (!error) {
           console.log("result (shouldnt end up here)");
             console.log(result);
@@ -140,7 +168,7 @@ async function main() {
 
         console.error(error);
     })
-    .on("data", (log) => {
+    .on("data", (log: any) => {
         if (config.debug) {
           console.log(log);
         }
@@ -153,13 +181,13 @@ async function main() {
 
         //either add transfer listening here or listen to events on Atola contract instead?
     })
-    .on("changed", (log) => {
+    .on("changed", (log: any) => {
       console.log("changed .....do something !!");
         console.log(log);
     });
 
   } finally {
-    //provider.disconnect();
+    provider.disconnect();
   }
 }
 

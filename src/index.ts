@@ -144,46 +144,32 @@ async function main() {
     await getBalances(eth, s, TokenContract);
 
     // subscribe to latest block (hopefully faster for price ticker)
-    eth.subscribe('newBlockHeaders', {}, (error: any, result: any) => {
-      if (!error) {
-        console.log("new block: ", result);
+    eth.subscribe('newBlockHeaders').on("data", (log: any) => {
+      if (config.debug) {
+        console.log("New Block: ", bufferToHex(log.hash));
       }
-    })
-    .on("data", (log: any) => {
-        if (config.debug) {
-          console.log("New Block: ", bufferToHex(log.hash));
-        }
-        getBalances(eth, s, TokenContract);
-    })
+      getBalances(eth, s, TokenContract);
+    });
 
     // subscribe to transfer events on token contract (slow)
     const subscription = await eth.subscribe('logs', {
         address: EXCHANGE_CONTRACT_ADDRESS,
         topics: [] // [web3.sha3('EthPurchase(address,uint256,uint256)'), ATOLA_CONTRACT_ADDRESS]  // filter for buyer
-    }, (error: any, result: any) => {
-        if (!error) {
-          console.log("result (shouldnt end up here)");
-            console.log(result);
-        }
-
-        console.error(error);
-    })
-    .on("data", (log: any) => {
-        if (config.debug) {
-          console.log(log);
-        }
-
-        // fiat->crypto "buyer" is always atola contract for UniswapExcahange Logs
-        //
-
-        // TokenPurchase: event({buyer: indexed(address), eth_sold: indexed(uint256(wei)), tokens_bought: indexed(uint256)})
-        // EthPurchase: event({buyer: indexed(address), tokens_sold: indexed(uint256), eth_bought: indexed(uint256(wei))})
-
-        //either add transfer listening here or listen to events on Atola contract instead?
-    })
-    .on("changed", (log: any) => {
-      console.log("changed .....do something !!");
+    }).on("data", (log: any) => {
+      if (config.debug) {
         console.log(log);
+    }
+
+      // fiat->crypto "buyer" is always atola contract for UniswapExcahange Logs
+      //
+
+      // TokenPurchase: event({buyer: indexed(address), eth_sold: indexed(uint256(wei)), tokens_bought: indexed(uint256)})
+      // EthPurchase: event({buyer: indexed(address), tokens_sold: indexed(uint256), eth_bought: indexed(uint256(wei))})
+
+      //either add transfer listening here or listen to events on Atola contract instead?
+    }).on("changed", (log: any) => {
+      console.log("changed .....do something !!");
+      console.log(log);
     });
 
   } finally {

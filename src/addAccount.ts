@@ -25,7 +25,7 @@ async function main() {
     if (err) { console.log("Error: ", err); process.exit(1); }
 
 
-    if (bip39.validateMnemonic(result.mnemonic)){
+    if (!bip39.validateMnemonic(result.mnemonic)){
       console.log('Invalid mnemonic.  Exiting');
       provider.disconnect();
       process.exit(1);

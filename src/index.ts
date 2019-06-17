@@ -2,7 +2,7 @@ import { Address } from 'web3x/address';
 import { Eth } from 'web3x/eth';
 import { Net } from 'web3x/net';
 import { WebsocketProvider } from 'web3x/providers';
-import { fromWei, toWei, recover, sign, bufferToHex } from 'web3x/utils';
+import { fromWei, toWei, recover, sign, bufferToHex, toBN } from 'web3x/utils';
 
 import { Atola } from './contracts/Atola';
 import { UniswapFactory } from './contracts/UniswapFactory';
@@ -63,7 +63,7 @@ async function processBuyETHOrder(eth: Eth, Contract: Atola, amount: number, add
 
 
       const fiatToEth = await Contract.methods
-                        .fiatToEth(toWei(amount, 'ether'), Address.fromString(address))
+                        .fiatToEth(toWei(toBN(amount), 'ether'), 0, Address.fromString(address))
                         .send({ from }) // , gasPrice
                         .getReceipt();
 
@@ -86,7 +86,7 @@ async function processSellETHOrder(eth: Eth, Contract: Atola, amount: number, ad
       const from = eth.wallet.accounts[0].address;
 
       const ethToFiat = await Contract.methods
-                        .ethToFiat(Address.fromString(address), toWei(amount, 'ether'))
+                        .ethToFiat(Address.fromString(address), toWei(toBN(amount), 'ether'))
                         .send({ from }) // , gasPrice
                         .getReceipt();
 

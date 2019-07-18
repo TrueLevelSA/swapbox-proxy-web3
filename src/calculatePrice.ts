@@ -8,7 +8,7 @@ import { fromWei, toWei } from 'web3x/utils';
  * @param outputReserve Output amount of Token in exchange reserves.
  * @param inputAmount   Amount of ETH being sold
  */
-export const tokenPrice = (inputReserve: BN, outputReserve: BN, inputAmount: BN)=> {
+export const tokenPrice = (inputReserve: BN, outputReserve: BN, inputAmount: BN) => {
   if (!inputReserve.gtn(0) || !outputReserve.gtn(0)) {
     throw Error('Reserves should be greater than zero');
   }

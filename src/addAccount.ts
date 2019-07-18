@@ -6,13 +6,30 @@ import * as prompt from 'prompt';
 import bip39 from 'bip39';
 import { config } from '../config';
 
+const promptGet = (properties: Object) => {
+  return new Promise<any>((resolve, reject) => {
+    prompt.get(properties, (err: any, result: any) => {
+      if(err){
+        reject();
+      }else{
+        resolve(result);
+      }
+    });
+  });
+}
+
+
+
 async function main() {
   // Construct necessary components.
   const provider = new WebsocketProvider(config.websocket_provider.url);
   const eth = new Eth(provider);
   const net = new Net(eth);
 
-  var properties = [
+  // user inputs
+  let result: any;
+
+  const properties = [
     {
       name: 'mnemonic',
       hidden: false
@@ -21,38 +38,32 @@ async function main() {
 
   prompt.start();
 
-  prompt.get(properties, await async function (err: any, result: any) {
-    if (err) { console.log("Error: ", err); process.exit(1); }
+  // prompt user for mnemonic
+  try {
+    result = await promptGet(properties);
+  } catch (e) {
+    console.error('Error while prompting user:', e)
+    process.exit(1);
+  }
 
+  // validate mnemonic or quit
+  if (!bip39.validateMnemonic(result.mnemonic)){
+    console.error('Invalid mnemonic.  Exiting');
+    provider.disconnect();
+    process.exit(1);
+  }
 
-    if (!bip39.validateMnemonic(result.mnemonic)){
-      console.log('Invalid mnemonic.  Exiting');
-      provider.disconnect();
-      process.exit(1);
-    }
+  const decryptedWallet = await Wallet.fromMnemonic(result.mnemonic, 1)
 
-    try {
-      console.log(`Connected to network: ${await net.getNetworkType()}`);
-      console.log(`Network Id: ${await eth.getId()}`);
-      console.log(`Node info: ${await eth.getNodeInfo()}`);
+  // If you want eth to use your accounts for signing transaction, set the wallet.
+  eth.wallet = decryptedWallet;
 
-      // const decryptedAccount = await Account.fromPrivate(result.privateKey);
-      const decryptedWallet = await Wallet.fromMnemonic(result.mnemonic, 1)
+  // Optionally you can specify a default 'from' address.
+  eth.defaultFromAddress = decryptedWallet.accounts[0].address;
 
-      console.log()
+  console.log("Added account: ", decryptedWallet.accounts[0].address.toString());
 
-      // If you want eth to use your accounts for signing transaction, set the wallet.
-      eth.wallet = decryptedWallet;
-
-      // Optionally you can specify a default 'from' address.
-      eth.defaultFromAddress = decryptedWallet.accounts[0].address;
-
-      console.log("Added account: ", decryptedWallet.accounts[0].address.toString());
-
-    } finally {
-      provider.disconnect();
-    }
-  });
+  provider.disconnect();
 }
 
 main().catch(console.error);

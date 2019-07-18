@@ -4,7 +4,7 @@ import { WebsocketProvider } from 'web3x/providers';
 import { Wallet } from 'web3x/wallet';
 import * as prompt from 'prompt';
 import bip39 from 'bip39';
-import { config } from '../config';
+import { config } from '../../config';
 
 const promptGet = (properties: Object) => {
   return new Promise<any>((resolve, reject) => {

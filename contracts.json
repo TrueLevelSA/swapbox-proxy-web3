@@ -17,6 +17,10 @@
     "UniswapFactory": {
       "source": "files",
       "abiFile": "abi/uniswap_factory.json"
+    },
+    "PriceFeed": {
+      "source": "files",
+      "abiFile": "abi/PriceFeed.json"
     }
   }
 }

@@ -30,6 +30,10 @@ Ensure ethereum client is running
 ```
 parity --light
 ```
+Testing with `geth` (unsafe because of `wsorigins` and `rpccorsdomain` accepting all sources)
+```
+geth --dev --rpc --rpcport=8545 --ws --wsport=8546 --wsorigins="*" --rpccorsdomain="*"
+```
 
 Start the connector
 ```

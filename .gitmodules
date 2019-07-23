@@ -1,0 +1,3 @@
+[submodule "smart-contract"]
+	path = smart-contract
+	url = git@gitlab.com:atola/smart-contract.git

@@ -46,27 +46,18 @@ const getBalances = async (priceFeed: PriceFeed) => {
   const tokenBalances = balances[1].map(tokenBalance => new BN(tokenBalance));
   const ethBalances = balances[2].map(ethBalance => new BN(ethBalance));
 
-  // show balances
-  if(config.debug){
-    [...Array(addresses.length).keys()].forEach(key => {
-      console.log(`Token ${key}`);
-      console.log(`  ExchangeAddress: ${addresses[key]}`);
-      console.log(`  Token Balance:   ${fromWei(tokenBalances[key], 'ether')}`);
-      console.log(`  ETH Balance:     ${fromWei(ethBalances[key], 'ether')}`);
-    })
-  }
-
   // sending only baseToken price (which is the first token in the list)
-  const outputAmount = toWei(new BN(1), 'ether').divn(2);
-  const price = ethPrice(ethBalances[0], tokenBalances[0], outputAmount);
-  const sellPrice = outputAmount.sub(OPERATOR_FEE).div(price);
-  const buyPrice = outputAmount.add(OPERATOR_FEE).div(price);
+  const outputAmount = toWei(new BN(1), 'ether');
+  const price = ethPrice(tokenBalances[0], ethBalances[0], outputAmount);
+  const fee = computeFee(price);
+  const sellPrice = price.sub(fee);
+  const buyPrice = price.add(fee);
 
+  // debug messages
   if (config.debug) {
-    console.log("Price:");
-    console.log(`  exchange:   ${fromWei(price, 'ether')}`);
-    console.log(`  atola buy:  ${fromWei(sellPrice, 'ether')}`);
-    console.log(`  atola sell: ${fromWei(buyPrice, 'ether')}`);
+    console.log(`exchange:   ${fromWei(price.toString(), 'ether')}`);
+    console.log(`atola buy:  ${fromWei(buyPrice.toString(), 'ether')}`);
+    console.log(`atola sell: ${fromWei(sellPrice.toString(), 'ether')}`);
   }
 
   // send through zmq

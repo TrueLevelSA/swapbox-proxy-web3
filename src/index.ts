@@ -161,13 +161,13 @@ async function main() {
 
   await getBalances(priceFeed);
 
-  subNewHeads = eth.subscribe('newBlockHeaders').on('data', (blockHeader: BlockHeaderResponse) => {
+  subNewHeads = eth.subscribe('newBlockHeaders').on('data', async (blockHeader: BlockHeaderResponse) => {
     if (config.debug) {
       if (blockHeader.hash) {
         console.log("New Block: ", bufferToHex(blockHeader.hash));
       }
     }
-    getBalances(priceFeed);
+    await getBalances(priceFeed);
   }).on('error', console.error);
 
   // Use our type safe auto generated contract.

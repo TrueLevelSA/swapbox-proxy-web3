@@ -11,7 +11,6 @@ import BN from 'bn.js';
 
 import { Atola } from './contracts/Atola';
 import { UniswapFactory } from './contracts/UniswapFactory';
-import { UniswapExchange } from './contracts/UniswapExchange';
 import { ERC20TokenContract } from './contracts/ERC20TokenContract';
 import { PriceFeed } from './contracts/PriceFeed';
 

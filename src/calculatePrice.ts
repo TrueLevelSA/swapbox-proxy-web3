@@ -32,9 +32,8 @@ export const ethPrice = (inputReserve: BN, outputReserve: BN, outputAmount: BN) 
     throw Error('Reserves should be greater than zero');
   }
 
-  const outputAmountInt = toWei(outputAmount, 'ether')
-  const numerator = inputReserve.mul(outputAmountInt).muln(1000);
-  const denominator = outputReserve.sub(outputAmountInt).muln(997);
+  const numerator = outputAmount.mul(inputReserve).muln(1000);
+  const denominator = outputReserve.sub(outputAmount).muln(997);
 
-  return fromWei(numerator.div(denominator).addn(1), 'ether');
+  return numerator.div(denominator).addn(1);
 }

@@ -4,7 +4,9 @@
   "main": "src/index.ts",
   "license": "MPL-2.0",
   "scripts": {
-    "build": "web3x-codegen && tsc",
+    "build:abis": "cd smart-contract/ && truffle compile",
+    "build:types": "web3x-codegen && tsc",
+    "build": "yarn build:abis && yarn build:types",
     "genkey": "node ./dist/src/createAccount.js",
     "addkey": "node ./dist/src/addAccount.js",
     "start": "yarn build && node ./dist/src",

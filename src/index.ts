@@ -22,14 +22,20 @@ import { socket } from 'zeromq';
 const s = socket('pub')
 const r = socket('rep')
 
-const PRICEFEED_CONTRACT_ADDRESS = Address.fromString('0xD3D3Ecd86d2797De529f2044E949aaE87E9815dE')
-const ATOLA_CONTRACT_ADDRESS = Address.fromString('0x2c4bd064b998838076fa341a83d007fc2fa50957'); // not this
-const FACTORY_CONTRACT_ADDRESS = Address.fromString('0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95');
-const EXCHANGE_CONTRACT_ADDRESS = Address.fromString('0x2c4bd064b998838076fa341a83d007fc2fa50957');
-const TOKEN_CONTRACT_ADDRESS = Address.fromString('0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2'); //MKR
+import deployed from '../smart-contract/config/local.json';
 
-// 2%  TO-DO look this up in smart contract
-const OPERATOR_FEE = new BN(toWei('0.02', 'ether'));
+const PRICEFEED_CONTRACT_ADDRESS = Address.fromString(deployed.PRICEFEED);
+const ATOLA_CONTRACT_ADDRESS = Address.fromString(deployed.ATOLA);
+const FACTORY_CONTRACT_ADDRESS = Address.fromString(deployed.UNISWAP_FACTORY);
+const EXCHANGE_CONTRACT_ADDRESS = Address.fromString(deployed.UNISWAP_EXCHANGE);
+const TOKEN_CONTRACT_ADDRESS = Address.fromString(deployed.BASE_TOKEN);
+
+// 1.2%  TO-DO look this up in smart contract
+const OPERATOR_FEE = new BN(120);
+
+const computeFee = (amount: BN) => {
+  return amount.mul(OPERATOR_FEE).divn(10000);
+}
 
 const getBalances = async (priceFeed: PriceFeed) => {
 

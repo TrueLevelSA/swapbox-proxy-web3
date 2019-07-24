@@ -2,7 +2,7 @@
   "name": "swap-box-web3",
   "version": "1.0.0",
   "main": "src/index.ts",
-  "license": "MPL",
+  "license": "MPL-2.0",
   "scripts": {
     "build": "web3x-codegen && tsc",
     "genkey": "node ./dist/src/createAccount.js",

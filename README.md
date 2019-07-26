@@ -3,10 +3,14 @@ README
 
 A connector to connect to parity light node with web3x and send over zmq (becuase web3.py sucks).
 
+### Dependencies
+- `vyper`
+- `geth` (go-ethereum)
+
 ### Install
 
 ```
-yarn
+yarn install
 ```
 
 ```

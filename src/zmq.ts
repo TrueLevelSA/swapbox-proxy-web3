@@ -55,7 +55,7 @@ export class Zmq {
    * Send new prices through ZMQ
    */
   public updatePriceticker = (buyPrice: BN, sellPrice: BN) => {
-    this.pub.send(['priceticker', JSON.stringify({buy_price: buyPrice, sell_price: sellPrice})])
+    this.pub.send(['priceticker', JSON.stringify({buy_price: buyPrice.toString(), sell_price: sellPrice.toString()})])
   }
 
 

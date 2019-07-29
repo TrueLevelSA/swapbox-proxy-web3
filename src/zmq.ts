@@ -6,24 +6,25 @@ import { Atola } from './contracts/Atola';
 import { processBuyEthOrder } from './processing/orders';
 
 export class Zmq {
-  private readonly s = socket('pub');
-  private readonly r = socket('rep');
+  private readonly pub = socket('pub');
+  private readonly sub = socket('sub');
 
   constructor(
     private publishUrl: string,
-    private responderUrl: string,
+    private subscribeUrl: string,
     private atola: Atola,
     private from: Address
   ) {
     // initialize publisher/responder
-    this.s.bindSync(this.publishUrl);
-    this.r.bindSync(this.responderUrl);
+    this.pub.bindSync(this.publishUrl);
+    this.sub.connect(this.subscribeUrl);
+    this.sub.subscribe('something');
 
     this.initializeListener();
   }
 
   private initializeListener = () => {
-    this.r.on('message', async (request) => {
+    this.sub.on('message', async (request) => {
       const message = JSON.parse(request.toString());
       console.log('zmq.onMessage:', message)
 
@@ -33,18 +34,18 @@ export class Zmq {
           await processBuyEthOrder(
             this.atola, this.from, message.amount, message.address
           );
-          this.r.send('success');
+          this.pub.send('success');
         } catch {
-          this.r.send('error while processBuyEthOrder');
+          this.pub.send('error while processBuyEthOrder');
         }
       } else if (message.method == "sell") {
         // send sell order
         // Need to make a function for startSell (listen for ethrecieved event)
         // Call this function when we get the EthRecieved event
         // const success = await processSellETHOrder(eth, OperatorContract, message.amount, message.address);
-        this.r.send('success');
+        this.pub.send('success');
       } else {
-        this.r.send('invalid method');
+        this.pub.send('invalid method');
       }
 
     });
@@ -54,7 +55,7 @@ export class Zmq {
    * Send new prices through ZMQ
    */
   public updatePriceticker = (buyPrice: BN, sellPrice: BN) => {
-    this.s.send(['priceticker', JSON.stringify({buy_price: buyPrice, sell_price: sellPrice})])
+    this.pub.send(['priceticker', JSON.stringify({buy_price: buyPrice, sell_price: sellPrice})])
   }
 
 

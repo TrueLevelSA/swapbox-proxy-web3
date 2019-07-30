@@ -29,7 +29,7 @@ const updatePriceticker = async (priceFeed: PriceFeed, zmq: Zmq) => {
 }
 
 async function main() {
-  // Construct necessary components.
+  // Initialization
   const provider = new WebsocketProvider(config.websocket_provider.url);
   const eth = new Eth(provider);
   const net = new Net(eth);
@@ -51,6 +51,7 @@ async function main() {
     machineAddress
   );
 
+  // Set up price ticker
   updatePriceticker(priceFeed, zmq);
   const subNewHeads = eth.subscribe('newBlockHeaders').on('data', async (blockHeader: BlockHeaderResponse) => {
     if (config.debug) {

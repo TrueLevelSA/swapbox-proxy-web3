@@ -41,3 +41,40 @@ export const fetchPrice = async (priceFeed: PriceFeed) => {
 const computeFee = (amount: BN) => {
   return amount.mul(OPERATOR_FEE).divn(10000);
 }
+
+/**
+ * Pricing function for buying ETH with CHF (XCHF).
+ *
+ * @param inputAmount   Amount of XCHF input
+ * @param inputReserve  Input amount of XCHF in exchange reserves.
+ * @param outputReserve Output amount of ETH in exchange reserves.
+ */
+const inputPrice = (inputAmount: BN, inputReserve: BN, outputReserve: BN) => {
+  if (!inputReserve.gtn(0) || !outputReserve.gtn(0)) {
+    throw Error('Reserves should be greater than zero');
+  }
+
+  const inputAmount_with_fee = toWei(inputAmount, 'ether').muln(997);
+
+  const numerator = inputAmount_with_fee.mul(outputReserve);
+  const denominator = inputReserve.muln(1000).add(inputAmount_with_fee);
+  return fromWei(numerator.div(denominator), 'ether');
+}
+
+/**
+ * Pricing function for selling ETH to get CHF (XCHF).
+ *
+ * @param outputAmount  Amount of XCHF being bought
+ * @param inputReserve  Input amount of XCHF in exchange reserves.
+ * @param outputReserve Output amount of ETH in exchange reserves.
+ */
+const outputPrice = (outputReserve: BN, outputAmount: BN, inputReserve: BN) => {
+  if (!inputReserve.gtn(0) || !outputReserve.gtn(0)) {
+    throw Error('Reserves should be greater than zero');
+  }
+
+  const numerator = outputAmount.mul(inputReserve).muln(1000);
+  const denominator = outputReserve.sub(outputAmount).muln(997);
+
+  return numerator.div(denominator).addn(1);
+}

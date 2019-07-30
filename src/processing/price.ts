@@ -31,7 +31,7 @@ export const fetchPrice = async (priceFeed: PriceFeed) => {
  * Compute fee for a given amount.
  */
 const computeFee = (amount: BN) => {
-  return amount.mul(OPERATOR_FEE).divn(10000);
+  return amount.mul(OPERATOR_FEE).divRound(new BN(10000));
 }
 
 /**

@@ -4,13 +4,14 @@ import { toWei, fromWei } from 'web3x/utils';
 import { PriceFeed } from '../contracts/PriceFeed';
 
 import { config } from '../../config';
+import { weiToHuman } from "../utils";
 
 // 1.2%  TO-DO look this up in smart contract
 const OPERATOR_FEE = new BN(120);
 
 export const fetchPrice = async (priceFeed: PriceFeed) => {
 
-  const priceAmount = toWei(new BN(1), 'ether');
+  const priceAmount = toWei(new BN(1), "ether");
   const prices = await priceFeed.methods.getPrice(priceAmount, priceAmount).call();
   const exchangeBuyPrice = new BN(prices[0]);
   const exchangeSellPrice = new BN(prices[1]);
@@ -19,9 +20,9 @@ export const fetchPrice = async (priceFeed: PriceFeed) => {
 
   // debug messages
   if (config.debug) {
-    console.log(`${fromWei(priceAmount, 'ether')} CHF`);
-    console.log(`buys:     ${fromWei(buyPrice.toString(), 'ether')}`);
-    console.log(`sells at: ${fromWei(sellPrice.toString(), 'ether')}`);
+    console.log(`${weiToHuman(priceAmount)} CHF`);
+    console.log(`buys:     ${weiToHuman(buyPrice)}`);
+    console.log(`sells at: ${weiToHuman(sellPrice)}`);
   }
 
   return {sellPrice, buyPrice};

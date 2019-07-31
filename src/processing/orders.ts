@@ -1,10 +1,10 @@
-import { Address } from 'web3x/address';
-import { toWei } from 'web3x/utils';
-import BN from 'bn.js';
+import BN from "bn.js";
+import { Address } from "web3x/address";
+import { toWei } from "web3x/utils";
 
-import { Atola } from '../contracts/Atola';
+import { Atola } from "../contracts/Atola";
 
-import { config } from '../../config';
+import { config } from "../../config";
 
 /**
  * Send a buy order to the Atola contract.
@@ -14,17 +14,15 @@ import { config } from '../../config';
  * @param amount       The amount of Fiat money received in the machine.
  * @param userAddress  Address on which the exchange will deposit the Eth.
  */
-export async function processBuyEthOrder(atola: Atola, from: Address, amount: BN, userAddress: Address)
-{
+export async function processBuyEthOrder(atola: Atola, from: Address, amount: BN, userAddress: Address) {
   const fiatToEth = await atola.methods.fiatToEth(
-    toWei(amount, 'ether'),
+    toWei(amount, "ether"),
     0,
     userAddress,
-  ).send({ from: from }).getReceipt();
+  ).send({ from }).getReceipt();
 
-  if (config.debug) {
-    console.log(`fiatToEth: ${fiatToEth}`);
-  }
+  // TODO: wait for Atola event `CryptoPurchase` and return bought ETH amount.
+  return new BN(1234);
 }
 
 /**
@@ -35,14 +33,10 @@ export async function processBuyEthOrder(atola: Atola, from: Address, amount: BN
  * @param amount       The amount of Fiat money received in the machine.
  * @param userAddress  Address on which the exchange will deposit the Eth.
  */
-export async function processSellEthOrder(atola: Atola, from: Address, amount: BN, userAddress: Address)
-{
+export async function processSellEthOrder(atola: Atola, from: Address, amount: BN, userAddress: Address) {
   const ethToFiat = await atola.methods.ethToFiat(
     userAddress,
-    toWei(amount, 'ether'),
-  ).send({ from: from }).getReceipt();
-
-  if (config.debug) {
-    console.log(`ethToFiat: ${ethToFiat}`);
-  }
+    toWei(amount, "ether"),
+  ).send({ from }).getReceipt();
+  // wait for event and return bought Fiat amount.
 }

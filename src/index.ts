@@ -1,18 +1,18 @@
-import { Address } from 'web3x/address';
-import { Eth } from 'web3x/eth';
-import { Net } from 'web3x/net';
-import { WebsocketProvider } from 'web3x/providers';
-import {bufferToHex } from 'web3x/utils';
-import { BlockHeaderResponse } from 'web3x/formatters';
+import { Address } from "web3x/address";
+import { Eth } from "web3x/eth";
+import { BlockHeaderResponse } from "web3x/formatters";
+import { Net } from "web3x/net";
+import { WebsocketProvider } from "web3x/providers";
+import {bufferToHex } from "web3x/utils";
 
-import { Atola } from './contracts/Atola';
-import { PriceFeed } from './contracts/PriceFeed';
+import { Atola } from "./contracts/Atola";
+import { PriceFeed } from "./contracts/PriceFeed";
 
-import { config } from '../config';
-import { Zmq } from './zmq';
-import { fetchPrice } from './processing/price';
+import { fetchPrice } from "./processing/price";
+import { Zmq } from "./zmq";
 
-import deployed from '../smart-contract/config/local.json';
+import { config } from "../config";
+import deployed from "../smart-contract/config/local.json";
 
 const PRICEFEED_CONTRACT_ADDRESS = Address.fromString(deployed.PRICEFEED);
 const ATOLA_CONTRACT_ADDRESS = Address.fromString(deployed.ATOLA);

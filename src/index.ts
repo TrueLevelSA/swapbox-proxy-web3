@@ -26,7 +26,7 @@ const ATOLA_CONTRACT_ADDRESS = Address.fromString(deployed.ATOLA);
 const updatePriceticker = async (priceFeed: PriceFeed, zmq: Zmq) => {
   const prices = await fetchPrice(priceFeed);
   zmq.updatePriceticker(prices.buyPrice, prices.sellPrice);
-}
+};
 
 async function main() {
   // Initialization

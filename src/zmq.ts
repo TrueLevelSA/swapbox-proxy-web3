@@ -64,7 +64,7 @@ export class Zmq {
       }
 
       // reply
-      this.rep.send(`{"status": "${reply.status}", "result": "${reply.result}"}`);
+      this.rep.send(JSON.stringify(reply));
     });
   }
 }

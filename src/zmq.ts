@@ -7,24 +7,23 @@ import { processBuyEthOrder } from './processing/orders';
 
 export class Zmq {
   private readonly pub = socket('pub');
-  private readonly sub = socket('sub');
+  private readonly rep = socket('rep');
 
   constructor(
     private publishUrl: string,
-    private subscribeUrl: string,
+    private replierUrl: string,
     private atola: Atola,
     private from: Address
   ) {
     // initialize publisher/responder
     this.pub.bindSync(this.publishUrl);
-    this.sub.connect(this.subscribeUrl);
-    this.sub.subscribe('something');
+    this.rep.bindSync(this.replierUrl);
 
     this.initializeListener();
   }
 
   private initializeListener = () => {
-    this.sub.on('message', async (request) => {
+    this.rep.on('message', async (request) => {
       const message = JSON.parse(request.toString());
       console.log('zmq.onMessage:', message)
 
@@ -34,18 +33,18 @@ export class Zmq {
           await processBuyEthOrder(
             this.atola, this.from, message.amount, message.address
           );
-          this.pub.send('success');
+          this.rep.send('success');
         } catch {
-          this.pub.send('error while processBuyEthOrder');
+          this.rep.send('error while processBuyEthOrder');
         }
       } else if (message.method == "sell") {
         // send sell order
         // Need to make a function for startSell (listen for ethrecieved event)
         // Call this function when we get the EthRecieved event
         // const success = await processSellETHOrder(eth, OperatorContract, message.amount, message.address);
-        this.pub.send('success');
+        this.rep.send('success');
       } else {
-        this.pub.send('invalid method');
+        this.rep.send('invalid method');
       }
 
     });

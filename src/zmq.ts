@@ -40,7 +40,7 @@ export class Zmq {
     this.rep.on("message", async (request) => {
       const reply: IReply = {status: "error", result: "undefined"};
       const message = JSON.parse(request.toString());
-      console.log('zmq.onMessage:', message);
+      console.log("zmq.onMessage:", message);
 
       if (message.method === "buy") {
         // send buy oder

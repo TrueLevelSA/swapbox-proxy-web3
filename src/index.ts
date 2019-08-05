@@ -43,27 +43,30 @@ async function main() {
   const atola = new Atola(eth, ATOLA_CONTRACT_ADDRESS);
   const priceFeed = new PriceFeed(eth, PRICEFEED_CONTRACT_ADDRESS);
   const machineAddress = (await eth.getAccounts())[0];
+  const userAddress = Address.fromString("0xC52e3EBcc77f131Ed304Be60c1f72D2d448aD34f");
 
   const zmq = new Zmq(
     config.zmq.url,
     config.zmq.responder_url,
     atola,
-    machineAddress
+    machineAddress,
   );
+
+  // await processBuyEthOrder(atola, machineAddress, new BN(1), userAddress);
 
   // Set up price ticker
   updatePriceticker(priceFeed, zmq);
-  const subNewHeads = eth.subscribe('newBlockHeaders').on('data', async (blockHeader: BlockHeaderResponse) => {
+  const subNewHeads = eth.subscribe("newBlockHeaders").on("data", async (blockHeader: BlockHeaderResponse) => {
     if (config.debug) {
       if (blockHeader.hash) {
         console.log("New Block: ", bufferToHex(blockHeader.hash));
       }
     }
     updatePriceticker(priceFeed, zmq);
-  }).on('error', console.error);
+  }).on("error", console.error);
 
   // Use our type safe auto generated contract.
-  //const uniswapExchangeContract = new UniswapExchange(eth, EXCHANGE_CONTRACT_ADDRESS);
+  // const uniswapExchangeContract = new UniswapExchange(eth, EXCHANGE_CONTRACT_ADDRESS);
 
   // get balances on launch
 
@@ -86,7 +89,7 @@ async function main() {
     // TokenPurchase: event({buyer: indexed(address), eth_sold: indexed(uint256(wei)), tokens_bought: indexed(uint256)})
     // EthPurchase: event({buyer: indexed(address), tokens_sold: indexed(uint256), eth_bought: indexed(uint256(wei))})
 
-    //either add transfer listening here or listen to events on Atola contract instead?
+  // either add transfer listening here or listen to events on Atola contract instead?
   // }).on("changed", (log: any) => {
   //   console.log("changed .....do something !!");
   //   console.log(log);

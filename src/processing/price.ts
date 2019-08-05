@@ -1,9 +1,9 @@
-import BN from 'bn.js';
-import { toWei, fromWei } from 'web3x/utils';
+import BN from "bn.js";
+import { fromWei, toWei } from "web3x/utils";
 
-import { PriceFeed } from '../contracts/PriceFeed';
+import { PriceFeed } from "../contracts/PriceFeed";
 
-import { config } from '../../config';
+import { config } from "../../config";
 import { weiToHuman } from "../utils";
 
 // 1.2%  TO-DO look this up in smart contract
@@ -26,14 +26,14 @@ export const fetchPrice = async (priceFeed: PriceFeed) => {
   }
 
   return {sellPrice, buyPrice};
-}
+};
 
 /**
  * Compute fee for a given amount.
  */
 const computeFee = (amount: BN) => {
   return amount.mul(OPERATOR_FEE).divRound(new BN(10000));
-}
+};
 
 /**
  * Pricing function for buying ETH with CHF (XCHF).
@@ -42,17 +42,17 @@ const computeFee = (amount: BN) => {
  * @param inputReserve  Input amount of XCHF in exchange reserves.
  * @param outputReserve Output amount of ETH in exchange reserves.
  */
-const inputPrice = (inputAmount: BN, inputReserve: BN, outputReserve: BN) => {
+export const inputPrice = (inputAmount: BN, inputReserve: BN, outputReserve: BN) => {
   if (!inputReserve.gtn(0) || !outputReserve.gtn(0)) {
-    throw Error('Reserves should be greater than zero');
+    throw Error("Reserves should be greater than zero");
   }
 
-  const inputAmount_with_fee = toWei(inputAmount, 'ether').muln(997);
+  const inputAmountWithFee = toWei(inputAmount, "ether").muln(997);
 
-  const numerator = inputAmount_with_fee.mul(outputReserve);
-  const denominator = inputReserve.muln(1000).add(inputAmount_with_fee);
-  return fromWei(numerator.div(denominator), 'ether');
-}
+  const numerator = inputAmountWithFee.mul(outputReserve);
+  const denominator = inputReserve.muln(1000).add(inputAmountWithFee);
+  return fromWei(numerator.div(denominator), "ether");
+};
 
 /**
  * Pricing function for selling ETH to get CHF (XCHF).
@@ -61,13 +61,13 @@ const inputPrice = (inputAmount: BN, inputReserve: BN, outputReserve: BN) => {
  * @param inputReserve  Input amount of XCHF in exchange reserves.
  * @param outputReserve Output amount of ETH in exchange reserves.
  */
-const outputPrice = (outputReserve: BN, outputAmount: BN, inputReserve: BN) => {
+export const outputPrice = (outputReserve: BN, outputAmount: BN, inputReserve: BN) => {
   if (!inputReserve.gtn(0) || !outputReserve.gtn(0)) {
-    throw Error('Reserves should be greater than zero');
+    throw Error("Reserves should be greater than zero");
   }
 
   const numerator = outputAmount.mul(inputReserve).muln(1000);
   const denominator = outputReserve.sub(outputAmount).muln(997);
 
   return numerator.div(denominator).addn(1);
-}
+};

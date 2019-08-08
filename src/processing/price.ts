@@ -20,9 +20,10 @@ export const fetchPrice = async (priceFeed: PriceFeed) => {
 
   // debug messages
   if (config.debug) {
-    console.log(`${weiToHuman(priceAmount)} CHF`);
-    console.log(`buys:     ${weiToHuman(buyPrice)}`);
-    console.log(`sells at: ${weiToHuman(sellPrice)}`);
+    console.log();
+    console.log(`price for: ${weiToHuman(priceAmount)} CHF`);
+    console.log(`buys:      ${weiToHuman(buyPrice)}`);
+    console.log(`sells at:  ${weiToHuman(sellPrice)}`);
   }
 
   return {sellPrice, buyPrice};

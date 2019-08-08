@@ -3,8 +3,7 @@ import { Address } from "web3x/address";
 import { toWei } from "web3x/utils";
 
 import { Atola } from "../contracts/Atola";
-
-import { config } from "../../config";
+import { addressToHuman } from "../utils";
 
 /**
  * Send a buy order to the Atola contract.
@@ -15,12 +14,20 @@ import { config } from "../../config";
  * @param userAddress  Address on which the exchange will deposit the Eth.
  */
 export async function processBuyEthOrder(atola: Atola, from: Address, amount: BN, userAddress: Address) {
-  const fiatToEth = await atola.methods.fiatToEth(
-    toWei(amount, "ether"),
-    0,
-    userAddress,
-  ).send({ from }).getReceipt();
+  console.log();
+  console.log(`order: ${amount} ETH from: ${addressToHuman(from)} to: ${addressToHuman(userAddress)}`);
+  try {
+    const estimate = await atola.methods.fiatToEth(toWei(amount, "ether"), 10000, userAddress).estimateGas();
 
+    const fiatToEth = await atola.methods.fiatToEth(
+      toWei(amount, "ether"), 10000, userAddress,
+    ).send({ from, gas: 4712300 }).getReceipt();
+    console.log(fiatToEth.events);
+
+  } catch (e) {
+    console.error("Error while processBuyEthOrder");
+    console.error(e);
+  }
   // TODO: wait for Atola event `CryptoPurchase` and return bought ETH amount.
   return new BN(1234);
 }

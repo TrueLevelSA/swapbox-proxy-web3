@@ -52,8 +52,6 @@ async function main() {
     machineAddress,
   );
 
-  // await processBuyEthOrder(atola, machineAddress, new BN(1), userAddress);
-
   // Set up price ticker
   updatePriceticker(priceFeed, zmq);
   const subNewHeads = eth.subscribe("newBlockHeaders").on("data", async (blockHeader: BlockHeaderResponse) => {

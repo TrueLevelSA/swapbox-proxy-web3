@@ -21,7 +21,7 @@ export async function processBuyEthOrder(atola: Atola, from: Address, amount: BN
 
     const fiatToEth = await atola.methods.fiatToEth(
       toWei(amount, "ether"), 10000, userAddress,
-    ).send({ from, gas: 4712300 }).getReceipt();
+    ).send({ from }).getReceipt();
     console.log(fiatToEth.events);
 
   } catch (e) {

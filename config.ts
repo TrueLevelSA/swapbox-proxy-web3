@@ -10,7 +10,7 @@ export const config = {
     url: 'wss://mainnet.infura.io/ws'
   },
   zmq: {
-    url: 'tcp://127.0.0.1:5556',
-    responder_url: 'tcp://127.0.0.1:5557'
+    url: 'tcp://0.0.0.0:5556',
+    responder_url: 'tcp://0.0.0.0:5557'
   }
 }

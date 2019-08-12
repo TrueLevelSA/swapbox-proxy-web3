@@ -10,6 +10,13 @@ interface IReply {
   result: string;
 }
 
+interface IMessage {
+  method: "buy";
+  amount: string;
+  min_eth: string;
+  address: string;
+}
+
 export class Zmq {
   private readonly pub = socket("pub");
   private readonly rep = socket("rep");
@@ -41,14 +48,18 @@ export class Zmq {
   private initializeListener = () => {
     this.rep.on("message", async (request) => {
       const reply: IReply = {status: "error", result: "undefined"};
-      const message = JSON.parse(request.toString());
+      const message: IMessage = JSON.parse(request.toString());
       console.log("zmq.onMessage:", message);
 
       if (message.method === "buy") {
         // send buy oder
         try {
           const ethBought = await processBuyEthOrder(
-            this.atola, this.machineAddress, message.amount, message.min_eth, message.address,
+            this.atola,
+            this.machineAddress,
+            new BN(message.amount),
+            new BN(message.min_eth),
+            Address.fromString(message.address),
           );
           if (ethBought) {
             reply.status = "success";

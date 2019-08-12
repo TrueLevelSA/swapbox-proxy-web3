@@ -1,13 +1,16 @@
+import BN from "bn.js";
+
 import { Address } from "web3x/address";
 import { Eth } from "web3x/eth";
 import { BlockHeaderResponse } from "web3x/formatters";
 import { Net } from "web3x/net";
 import { WebsocketProvider } from "web3x/providers";
-import {bufferToHex } from "web3x/utils";
+import { bufferToHex, toWei } from "web3x/utils";
 
 import { Atola } from "./contracts/Atola";
 import { PriceFeed } from "./contracts/PriceFeed";
 
+import { processBuyEthOrder } from "./processing/orders";
 import { fetchPrice } from "./processing/price";
 import { Zmq } from "./zmq";
 
@@ -24,8 +27,8 @@ const ATOLA_CONTRACT_ADDRESS = Address.fromString(deployed.ATOLA);
  * @param zmq       Zmq instance
  */
 const updatePriceticker = async (priceFeed: PriceFeed, zmq: Zmq) => {
-  const prices = await fetchPrice(priceFeed);
-  zmq.updatePriceticker(prices.buyPrice, prices.sellPrice);
+  const reserves = await priceFeed.methods.getReserves().call();
+  zmq.updatePriceticker(new BN(reserves[0]), new BN(reserves[1]));
 };
 
 async function main() {
@@ -33,6 +36,8 @@ async function main() {
   const provider = new WebsocketProvider(config.websocket_provider.url);
   const eth = new Eth(provider);
   const net = new Net(eth);
+
+  const accounts = await eth.getAccounts();
 
   if (config.debug) {
     console.log(`Connected to network: ${await net.getNetworkType()}`);
@@ -42,8 +47,8 @@ async function main() {
 
   const atola = new Atola(eth, ATOLA_CONTRACT_ADDRESS);
   const priceFeed = new PriceFeed(eth, PRICEFEED_CONTRACT_ADDRESS);
-  const machineAddress = (await eth.getAccounts())[0];
-  const userAddress = Address.fromString("0xC52e3EBcc77f131Ed304Be60c1f72D2d448aD34f");
+  const machineAddress = accounts[2];
+  const userAddress = accounts[3];
 
   const zmq = new Zmq(
     config.zmq.url,
@@ -51,7 +56,6 @@ async function main() {
     atola,
     machineAddress,
   );
-
   // Set up price ticker
   updatePriceticker(priceFeed, zmq);
   const subNewHeads = eth.subscribe("newBlockHeaders").on("data", async (blockHeader: BlockHeaderResponse) => {

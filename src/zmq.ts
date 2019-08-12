@@ -20,7 +20,7 @@ export class Zmq {
     private publishUrl: string,
     private replierUrl: string,
     private atola: Atola,
-    private from: Address,
+    private machineAddress: Address,
   ) {
     // initialize publisher/responder
     this.pub.bindSync(this.publishUrl);
@@ -32,8 +32,10 @@ export class Zmq {
   /**
    * Send new prices through ZMQ
    */
-  public updatePriceticker = (buyPrice: BN, sellPrice: BN) => {
-    this.pub.send([this.PUB_TOPIC, JSON.stringify({buy_price: buyPrice.toString(), sell_price: sellPrice.toString()})]);
+  public updatePriceticker = (tokenReserve: BN, ethReserve: BN) => {
+    this.pub.send(
+      [this.PUB_TOPIC, JSON.stringify({token_reserve: tokenReserve.toString(), eth_reserve: ethReserve.toString()})],
+    );
   }
 
   private initializeListener = () => {
@@ -46,12 +48,15 @@ export class Zmq {
         // send buy oder
         try {
           const ethBought = await processBuyEthOrder(
-            this.atola, this.from, message.amount, message.address,
+            this.atola, this.machineAddress, message.amount, message.min_eth, message.address,
           );
-          reply.status = "success";
-          reply.result = ethBought.toString();
-        } catch {
+          if (ethBought) {
+            reply.status = "success";
+            reply.result = ethBought.cryptoAmount;
+          }
+        } catch (error) {
           reply.result = "error while processBuyEthOrder";
+          console.error(error);
         }
       } else if (message.method === "sell") {
         // send sell order

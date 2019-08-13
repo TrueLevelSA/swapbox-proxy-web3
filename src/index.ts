@@ -63,35 +63,6 @@ async function main() {
     }
   }).on("error", console.error);
 
-  // Use our type safe auto generated contract.
-  // const uniswapExchangeContract = new UniswapExchange(eth, EXCHANGE_CONTRACT_ADDRESS);
-
-  // get balances on launch
-
-  // subscribe to latest block (hopefully faster for price ticker)
-
-  // subNewHeads.unsubscribe();u
-  //
-  // // subscribe to transfer events on token contract (slow)
-  // const subscription = await eth.subscribe('logs', {
-  //     address: EXCHANGE_CONTRACT_ADDRESS,
-  //     topics: [] // [web3.sha3('EthPurchase(address,uint256,uint256)'), ATOLA_CONTRACT_ADDRESS]  // filter for buyer
-  // }).on("data", (log: any) => {
-  //   if (config.debug) {
-  //     console.log(log);
-  // }
-
-    // fiat->crypto "buyer" is always atola contract for UniswapExcahange Logs
-    //
-
-    // TokenPurchase: event({buyer: indexed(address), eth_sold: indexed(uint256(wei)), tokens_bought: indexed(uint256)})
-    // EthPurchase: event({buyer: indexed(address), tokens_sold: indexed(uint256), eth_bought: indexed(uint256(wei))})
-
-  // either add transfer listening here or listen to events on Atola contract instead?
-  // }).on("changed", (log: any) => {
-  //   console.log("changed .....do something !!");
-  //   console.log(log);
-  // });
 }
 
 main().catch(console.error);

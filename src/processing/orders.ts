@@ -18,7 +18,7 @@ import BN from "bn.js";
 import { Address } from "web3x/address";
 import { toWei } from "web3x/utils";
 
-import { Atola, CryptoPurchaseEvent } from "../contracts/Atola";
+import { Atola } from "../contracts/Atola";
 import { addressToHuman, weiToHuman } from "../utils";
 
 /**

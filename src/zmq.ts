@@ -20,6 +20,8 @@ import { socket } from "zeromq";
 
 import { Atola } from "./contracts/Atola";
 import { PriceFeed } from "./contracts/PriceFeed";
+
+import { INodeStatus } from "./node";
 import { processBuyEthOrder } from "./processing/orders";
 
 interface IReply {
@@ -37,15 +39,6 @@ interface IMessage {
 export interface IReserves {
   token_reserve: BN;
   eth_reserve: BN;
-}
-
-export interface IStatus {
-  blockchain: {
-    is_in_sync: boolean;
-    best_block: BN;
-    node_latency: number;
-    peers: number;
-  };
 }
 
 export class Zmq {
@@ -72,10 +65,8 @@ export class Zmq {
     this.initializeListener();
   }
 
-  public updateStatus = async () => {
-    const status = await this.fetchStatus();
-    this.pubStatus.send([this.TOPIC_STATUS, JSON.stringify(status)]);
-    return status;
+  public sendStatus = (nodeStatus: INodeStatus) => {
+    this.pubStatus.send([this.TOPIC_STATUS, JSON.stringify(nodeStatus)]);
   }
 
   /**
@@ -85,19 +76,6 @@ export class Zmq {
     const reserves = await this.fetchReserves();
     this.pub.send([this.TOPIC_PRICETICKER, JSON.stringify(reserves)]);
     return reserves;
-  }
-
-  private fetchStatus = async () => {
-    // TODO: Implement
-    const status: IStatus = {
-      blockchain: {
-        is_in_sync: true,
-        best_block: new BN("12345678"),
-        node_latency: 42,
-        peers: 1337,
-      },
-    };
-    return status;
   }
 
   /**
@@ -135,6 +113,7 @@ export class Zmq {
           if (ethBought) {
             reply.status = "success";
             reply.result = ethBought.cryptoAmount;
+            console.log(reply);
           }
         } catch (error) {
           reply.result = "error while processBuyEthOrder";

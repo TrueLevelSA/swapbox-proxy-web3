@@ -11,24 +11,13 @@ import { Atola } from "./contracts/Atola";
 import { PriceFeed } from "./contracts/PriceFeed";
 
 import { weiToHuman } from "./utils";
-import { Zmq } from "./zmq";
+import { IReserves, Zmq } from "./zmq";
 
 import { config } from "../config";
 import deployed from "../smart-contract/config/local.json";
 
 const PRICEFEED_CONTRACT_ADDRESS = Address.fromString(deployed.PRICEFEED);
 const ATOLA_CONTRACT_ADDRESS = Address.fromString(deployed.ATOLA);
-
-/**
- * Fetch new price and send them through zmq.
- *
- * @param priceFeed PriceFeed contract instance
- * @param zmq       Zmq instance
- */
-const updatePriceticker = async (priceFeed: PriceFeed, zmq: Zmq) => {
-  const reserves = await priceFeed.methods.getReserves().call();
-  zmq.updatePriceticker(new BN(reserves[0]), new BN(reserves[1]));
-};
 
 async function main() {
   // Initialization
@@ -47,23 +36,31 @@ async function main() {
   const atola = new Atola(eth, ATOLA_CONTRACT_ADDRESS);
   const priceFeed = new PriceFeed(eth, PRICEFEED_CONTRACT_ADDRESS);
   const machineAddress = accounts[2];
-  const userAddress = accounts[3];
+  let reserves: IReserves;
 
   const zmq = new Zmq(
     config.zmq.url,
     config.zmq.responder_url,
     atola,
+    priceFeed,
     machineAddress,
   );
-  // Set up price ticker
-  updatePriceticker(priceFeed, zmq);
-  const subNewHeads = eth.subscribe("newBlockHeaders").on("data", async (blockHeader: BlockHeaderResponse) => {
+
+  // PRICE TICKER.
+  // first time
+  zmq.updatePriceticker();
+  // update price ticker at each block
+  eth.subscribe("newBlockHeaders").on("data", async (blockHeader: BlockHeaderResponse) => {
+    reserves = await zmq.updatePriceticker();
     if (config.debug) {
       if (blockHeader.hash) {
+        console.log();
         console.log("New Block: ", bufferToHex(blockHeader.hash));
+        console.log("Exchange reserves:");
+        console.log(`   ETH: ${weiToHuman(reserves.eth_reserve)}`);
+        console.log(`   CHF: ${weiToHuman(reserves.token_reserve)}`);
       }
     }
-    updatePriceticker(priceFeed, zmq);
   }).on("error", console.error);
 
   // Use our type safe auto generated contract.

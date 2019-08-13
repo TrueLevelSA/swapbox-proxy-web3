@@ -3,6 +3,7 @@ import { Address } from "web3x/address";
 import { socket } from "zeromq";
 
 import { Atola } from "./contracts/Atola";
+import { PriceFeed } from "./contracts/PriceFeed";
 import { processBuyEthOrder } from "./processing/orders";
 
 interface IReply {
@@ -17,6 +18,11 @@ interface IMessage {
   address: string;
 }
 
+export interface IReserves {
+  token_reserve: BN;
+  eth_reserve: BN;
+}
+
 export class Zmq {
   private readonly pub = socket("pub");
   private readonly rep = socket("rep");
@@ -27,6 +33,7 @@ export class Zmq {
     private publishUrl: string,
     private replierUrl: string,
     private atola: Atola,
+    private priceFeed: PriceFeed,
     private machineAddress: Address,
   ) {
     // initialize publisher/responder
@@ -37,14 +44,30 @@ export class Zmq {
   }
 
   /**
-   * Send new prices through ZMQ
+   * Fetch new price and send them through zmq.
    */
-  public updatePriceticker = (tokenReserve: BN, ethReserve: BN) => {
-    this.pub.send(
-      [this.PUB_TOPIC, JSON.stringify({token_reserve: tokenReserve.toString(), eth_reserve: ethReserve.toString()})],
-    );
+  public updatePriceticker = async () => {
+    const reserves = await this.fetchReserves();
+    this.pub.send([this.PUB_TOPIC, JSON.stringify(reserves)]);
+    return reserves;
   }
 
+  /**
+   * Fetch exchange reserves using priceFeed contract.
+   *
+   * @returns reserves A promise of an IReserves interface
+   */
+  private fetchReserves = async (): Promise<IReserves> => {
+    const raw = await this.priceFeed.methods.getReserves().call();
+    return {
+      token_reserve: new BN(raw[0]),
+      eth_reserve: new BN(raw[1]),
+    };
+  }
+
+  /**
+   * Intialize zmq req/rep.
+   */
   private initializeListener = () => {
     this.rep.on("message", async (request) => {
       const reply: IReply = {status: "error", result: "undefined"};

@@ -5,13 +5,12 @@ import { Eth } from "web3x/eth";
 import { BlockHeaderResponse } from "web3x/formatters";
 import { Net } from "web3x/net";
 import { WebsocketProvider } from "web3x/providers";
-import { bufferToHex, toWei } from "web3x/utils";
+import { bufferToHex } from "web3x/utils";
 
 import { Atola } from "./contracts/Atola";
 import { PriceFeed } from "./contracts/PriceFeed";
 
-import { processBuyEthOrder } from "./processing/orders";
-import { fetchPrice } from "./processing/price";
+import { weiToHuman } from "./utils";
 import { Zmq } from "./zmq";
 
 import { config } from "../config";

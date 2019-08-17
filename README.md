@@ -3,10 +3,14 @@ README
 
 A connector to connect to parity light node with web3x and send over zmq (becuase web3.py sucks).
 
+### Dependencies
+- `vyper`
+- `geth` (go-ethereum)
+
 ### Install
 
 ```
-yarn
+yarn install
 ```
 
 ```
@@ -29,6 +33,10 @@ yarn addkey
 Ensure ethereum client is running
 ```
 parity --light
+```
+Testing with `geth` (unsafe because of `wsorigins` and `rpccorsdomain` accepting all sources)
+```
+geth --dev --rpc --rpcport=8545 --ws --wsport=8546 --wsorigins="*" --rpccorsdomain="*"
 ```
 
 Start the connector

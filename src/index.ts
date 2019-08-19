@@ -11,7 +11,7 @@ import { Atola } from "./contracts/Atola";
 import { PriceFeed } from "./contracts/PriceFeed";
 
 import { weiToHuman } from "./utils";
-import { IReserves, Zmq } from "./zmq";
+import { IReserves, IStatus, Zmq } from "./zmq";
 
 import { config } from "../config";
 import deployed from "../smart-contract/config/local.json";

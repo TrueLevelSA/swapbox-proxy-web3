@@ -23,14 +23,26 @@ export interface IReserves {
   eth_reserve: BN;
 }
 
+export interface IStatus {
+  blockchain: {
+    is_in_sync: boolean;
+    best_block: BN;
+    node_latency: number;
+    peers: number;
+  };
+}
+
 export class Zmq {
   private readonly pub = socket("pub");
+  private readonly pubStatus = socket("pub");
   private readonly rep = socket("rep");
 
-  private readonly PUB_TOPIC = "priceticker";
+  private readonly TOPIC_PRICETICKER = "priceticker";
+  private readonly TOPIC_STATUS = "status";
 
   constructor(
     private publishUrl: string,
+    private publishStatusUrl: string,
     private replierUrl: string,
     private atola: Atola,
     private priceFeed: PriceFeed,
@@ -38,9 +50,16 @@ export class Zmq {
   ) {
     // initialize publisher/responder
     this.pub.bindSync(this.publishUrl);
+    this.pubStatus.bindSync(this.publishStatusUrl);
     this.rep.bindSync(this.replierUrl);
 
     this.initializeListener();
+  }
+
+  public updateStatus = async () => {
+    const status = await this.fetchStatus();
+    this.pubStatus.send([this.TOPIC_STATUS, JSON.stringify(status)]);
+    return status;
   }
 
   /**
@@ -48,8 +67,21 @@ export class Zmq {
    */
   public updatePriceticker = async () => {
     const reserves = await this.fetchReserves();
-    this.pub.send([this.PUB_TOPIC, JSON.stringify(reserves)]);
+    this.pub.send([this.TOPIC_PRICETICKER, JSON.stringify(reserves)]);
     return reserves;
+  }
+
+  private fetchStatus = async () => {
+    // TODO: Implement
+    const status: IStatus = {
+      blockchain: {
+        is_in_sync: true,
+        best_block: new BN("12345678"),
+        node_latency: 42,
+        peers: 1337,
+      },
+    };
+    return status;
   }
 
   /**

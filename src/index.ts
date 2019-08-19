@@ -35,11 +35,13 @@ async function main() {
 
   const atola = new Atola(eth, ATOLA_CONTRACT_ADDRESS);
   const priceFeed = new PriceFeed(eth, PRICEFEED_CONTRACT_ADDRESS);
-  const machineAddress = accounts[2];
+  const machineAddress = accounts[0];
   let reserves: IReserves;
+  let status: IStatus;
 
   const zmq = new Zmq(
     config.zmq.url,
+    config.zmq.url_status,
     config.zmq.responder_url,
     atola,
     priceFeed,
@@ -52,6 +54,7 @@ async function main() {
   // update price ticker at each block
   eth.subscribe("newBlockHeaders").on("data", async (blockHeader: BlockHeaderResponse) => {
     reserves = await zmq.updatePriceticker();
+    status = await zmq.updateStatus();
     if (config.debug) {
       if (blockHeader.hash) {
         console.log();
@@ -59,6 +62,7 @@ async function main() {
         console.log("Exchange reserves:");
         console.log(`   ETH: ${weiToHuman(reserves.eth_reserve)}`);
         console.log(`   CHF: ${weiToHuman(reserves.token_reserve)}`);
+        console.log(`status: ${JSON.stringify(status)}`);
       }
     }
   }).on("error", console.error);

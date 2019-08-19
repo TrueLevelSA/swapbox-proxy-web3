@@ -9,5 +9,6 @@ export const config = {
   zmq: {
     url: "tcp://0.0.0.0:5556",
     responder_url: "tcp://0.0.0.0:5557",
+    url_status: "tcp://0.0.0.0:5558",
   },
 };

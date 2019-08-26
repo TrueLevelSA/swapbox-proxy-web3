@@ -2,7 +2,7 @@
   "name": "swap-box-web3",
   "version": "1.0.0",
   "main": "src/index.ts",
-  "license": "GPLv3",
+  "license": "AGPL-3.0-or-later",
   "scripts": {
     "accounts:genkey": "node ./dist/src/accounts/createAccount.js",
     "accounts:addkey": "node ./dist/src/accounts/addAccount.js",

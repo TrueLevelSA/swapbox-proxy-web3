@@ -42,9 +42,9 @@ async function main() {
   let reserves: IReserves;
 
   const zmq = new Zmq(
-    config.zmq.url,
-    config.zmq.url_status,
-    config.zmq.responder_url,
+    config.zmq.url_pub_price,
+    config.zmq.url_pub_status,
+    config.zmq.url_replier,
     atola,
     priceFeed,
     machineAddress,

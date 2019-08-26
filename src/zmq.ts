@@ -42,7 +42,7 @@ export interface IReserves {
 }
 
 export class Zmq {
-  private readonly pub = socket("pub");
+  private readonly pubPrice = socket("pub");
   private readonly pubStatus = socket("pub");
   private readonly rep = socket("rep");
 
@@ -50,17 +50,17 @@ export class Zmq {
   private readonly TOPIC_STATUS = "status";
 
   constructor(
-    private publishUrl: string,
-    private publishStatusUrl: string,
-    private replierUrl: string,
+    private urlPubPrice: string,
+    private urlPubStatus: string,
+    private urlReplier: string,
     private atola: Atola,
     private priceFeed: PriceFeed,
     private machineAddress: Address,
   ) {
     // initialize publisher/responder
-    this.pub.bindSync(this.publishUrl);
-    this.pubStatus.bindSync(this.publishStatusUrl);
-    this.rep.bindSync(this.replierUrl);
+    this.pubPrice.bindSync(this.urlPubPrice);
+    this.pubStatus.bindSync(this.urlPubStatus);
+    this.rep.bindSync(this.urlReplier);
 
     this.initializeListener();
   }
@@ -74,7 +74,7 @@ export class Zmq {
    */
   public updatePriceticker = async () => {
     const reserves = await this.fetchReserves();
-    this.pub.send([this.TOPIC_PRICETICKER, JSON.stringify(reserves)]);
+    this.pubPrice.send([this.TOPIC_PRICETICKER, JSON.stringify(reserves)]);
     return reserves;
   }
 

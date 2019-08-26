@@ -23,8 +23,8 @@ export const config = {
     url: "ws://127.0.0.1:8546",
   },
   zmq: {
-    url: "tcp://0.0.0.0:5556",
-    responder_url: "tcp://0.0.0.0:5557",
-    url_status: "tcp://0.0.0.0:5558",
+    url_pub_price: "tcp://0.0.0.0:5556",
+    url_replier: "tcp://0.0.0.0:5557",
+    url_pub_status: "tcp://0.0.0.0:5558",
   },
 };

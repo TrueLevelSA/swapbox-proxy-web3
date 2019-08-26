@@ -17,7 +17,7 @@
     "start": "yarn build && node ./dist/src",
     "start:dev": "nodemon ./dist/src/index.js",
     "test": "jest",
-    "postinstall": "git submodule update --init && cd smart-contract/ && yarn install && yarn migrate"
+    "postinstall": "git submodule update --init && cd smart-contract/ && yarn install"
   },
   "jest": {
     "transform": {

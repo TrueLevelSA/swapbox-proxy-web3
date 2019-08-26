@@ -37,7 +37,7 @@
     "truffle": "5.0.26",
     "ts-jest": "^23.10.5",
     "typescript": "^3.3.3",
-    "web3x": "^4.0.3",
+    "web3x": "^4.0.4",
     "zeromq": "^5.1.0"
   },
   "devDependencies": {

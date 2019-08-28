@@ -17,12 +17,16 @@ A connector to connect to parity light node with web3x and send over zmq (becuas
 yarn install && yarn build
 ```
 
-### Runing
+You need to unlock the `account[0]` of your node, this is the `machineAddress` that will be used in the code. You also need to call `Atola.addMachine(machineAddress)` from the Atola's `owner` address before being able to perform buy/sell orders.
+
+### Running
 
 Ensure ethereum client is running
 ```bash
 parity --light
 ```
+
+You can edit `config.json` at your tastes before starting.
 
 Start the connector
 ```bash

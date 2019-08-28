@@ -5,7 +5,7 @@ import { Eth } from "web3x/eth";
 import { Atola } from "./contracts/Atola";
 import { PriceFeed } from "./contracts/PriceFeed";
 
-import { config } from "../config";
+import * as config from "../config.json";
 
 interface IDeployedAddresses {
   XCHF: string;

@@ -19,7 +19,7 @@ import { Sync } from "web3x/formatters/output-syncing-formatter";
 import { Net } from "web3x/net";
 import { WebsocketProvider } from "web3x/providers";
 
-import { config } from "../config";
+import * as config from "../config.json";
 
 export interface INodeStatus {
   is_syncing: boolean | Sync;

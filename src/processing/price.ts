@@ -19,7 +19,7 @@ import { fromWei, toWei } from "web3x/utils";
 
 import { PriceFeed } from "../contracts/PriceFeed";
 
-import { config } from "../../config";
+import * as config from "../../config.json";
 import { weiToHuman } from "../utils";
 
 // 1.2%  TO-DO look this up in smart contract

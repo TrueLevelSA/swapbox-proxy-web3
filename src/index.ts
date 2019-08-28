@@ -18,7 +18,7 @@ import { Contracts } from "./contracts";
 import { Node } from "./node";
 import { Zmq } from "./zmq";
 
-import { config } from "../config";
+import * as config from "../config.json";
 
 async function main() {
   // Initialization

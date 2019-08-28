@@ -14,17 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { Address } from "web3x/address";
-import { Eth } from "web3x/eth";
-import { bufferToHex } from "web3x/utils";
-
 import { contractsDeployed, getAtola, getPriceFeed } from "./contracts";
 import { Node } from "./node";
-import { weiToHuman } from "./utils";
-import { IReserves, Zmq } from "./zmq";
+import { Zmq } from "./zmq";
 
 import { config } from "../config";
-import deployed from "../smart-contract/config/local.json";
 
 async function main() {
   // Initialization

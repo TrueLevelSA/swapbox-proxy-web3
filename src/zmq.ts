@@ -66,7 +66,9 @@ export class Zmq {
   }
 
   public sendStatus = (nodeStatus: INodeStatus) => {
-    this.pubStatus.send([this.TOPIC_STATUS, JSON.stringify(nodeStatus)]);
+    const msg = [this.TOPIC_STATUS, JSON.stringify(nodeStatus)];
+    console.log(`ZMQ: ${msg}`);
+    this.pubStatus.send(msg);
   }
 
   /**
@@ -74,7 +76,9 @@ export class Zmq {
    */
   public updatePriceticker = async () => {
     const reserves = await this.fetchReserves();
-    this.pubPrice.send([this.TOPIC_PRICETICKER, JSON.stringify(reserves)]);
+    const msg = [this.TOPIC_PRICETICKER, JSON.stringify(reserves)];
+    console.log(`ZMQ: ${msg}`);
+    this.pubPrice.send(msg);
     return reserves;
   }
 

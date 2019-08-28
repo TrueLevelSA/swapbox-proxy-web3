@@ -16,7 +16,6 @@
 
 import { Address } from "web3x/address";
 import { Eth } from "web3x/eth";
-import { BlockHeaderResponse } from "web3x/formatters";
 import { bufferToHex } from "web3x/utils";
 
 import { contractsDeployed, getAtola, getPriceFeed } from "./contracts";
@@ -42,28 +41,16 @@ async function main() {
     return;
   }
 
-  // STATUS UPDATES
-  setTimeout(async () => {
-    const nodeStatus = await node.getStatus();
-    zmq.sendStatus(nodeStatus);
-  }, 1000);
 
   // PRICE TICKER.
   // first time
   zmq.updatePriceticker();
   // update price ticker at each block
-  node.eth.subscribe("newBlockHeaders").on("data", async (blockHeader: BlockHeaderResponse) => {
-    reserves = await zmq.updatePriceticker();
-    if (config.debug) {
-      if (blockHeader.hash) {
-        console.log();
-        console.log("New Block: ", bufferToHex(blockHeader.hash));
-        console.log("  Exchange reserves:");
-        console.log(`     ETH: ${weiToHuman(reserves.eth_reserve)}`);
-        console.log(`     CHF: ${weiToHuman(reserves.token_reserve)}`);
-      }
-    }
-  }).on("error", console.error);
+  node.eth().subscribe("newBlockHeaders")
+    .on("data", async () => {
+      await zmq.updatePriceticker();
+    },
+  ).on("error", console.error);
 
 }
 

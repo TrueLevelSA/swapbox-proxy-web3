@@ -15,12 +15,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { Address } from "web3x/address";
+import { Eth } from "web3x/eth";
 import { BlockHeaderResponse } from "web3x/formatters";
 import { bufferToHex } from "web3x/utils";
 
-import { Atola } from "./contracts/Atola";
-import { PriceFeed } from "./contracts/PriceFeed";
-
+import { contractsDeployed, getAtola, getPriceFeed } from "./contracts";
 import { Node } from "./node";
 import { weiToHuman } from "./utils";
 import { IReserves, Zmq } from "./zmq";
@@ -28,27 +27,20 @@ import { IReserves, Zmq } from "./zmq";
 import { config } from "../config";
 import deployed from "../smart-contract/config/local.json";
 
-const PRICEFEED_CONTRACT_ADDRESS = Address.fromString(deployed.PRICEFEED);
-const ATOLA_CONTRACT_ADDRESS = Address.fromString(deployed.ATOLA);
-
 async function main() {
   // Initialization
   const node = new Node(config.websocket_provider.url);
   await node.waitForConnection();
 
-  const atola = new Atola(node.eth, ATOLA_CONTRACT_ADDRESS);
-  const priceFeed = new PriceFeed(node.eth, PRICEFEED_CONTRACT_ADDRESS);
-  const machineAddress = node.getAccounts()[0];
-  let reserves: IReserves;
+  // retrieve atola and pricefeed contracts.
+  const atola = getAtola(node.eth());
+  const priceFeed = getPriceFeed(node.eth());
 
-  const zmq = new Zmq(
-    config.zmq.url_pub_price,
-    config.zmq.url_pub_status,
-    config.zmq.url_replier,
-    atola,
-    priceFeed,
-    machineAddress,
-  );
+  // detect contracts on network.
+  if (!await contractsDeployed(node.eth())) {
+    console.log("Contracts arent deployed to current network. Exiting.");
+    return;
+  }
 
   // STATUS UPDATES
   setTimeout(async () => {

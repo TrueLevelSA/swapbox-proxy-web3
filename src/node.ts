@@ -66,7 +66,7 @@ export class Node {
     return new Promise<void>(async (resolve, reject) => {
       if (await this.isConnected()) {
         // init and resolve.
-        this.init();
+        await this.init();
         resolve();
       } else {
         // start reconnect routine
@@ -111,7 +111,7 @@ export class Node {
     // try reconnect and check connection. retry after
     await this.reconnect();
     if (await this.isConnected()) {
-      this.init();
+      await this.init();
       resolve();
     } else {
       console.log(`Not connected. Retrying. ${tryCount + 1}/${config.reconnectMaxTries}`);

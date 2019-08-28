@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { contractsDeployed, getAtola, getPriceFeed } from "./contracts";
+import { Contracts } from "./contracts";
 import { Node } from "./node";
 import { Zmq } from "./zmq";
 
@@ -26,11 +26,12 @@ async function main() {
   await node.waitForConnection();
 
   // retrieve atola and pricefeed contracts.
-  const atola = getAtola(node.eth());
-  const priceFeed = getPriceFeed(node.eth());
+  const contracts = new Contracts(node.eth());
+  const atola = contracts.atola();
+  const priceFeed = contracts.priceFeed();
 
   // detect contracts on network.
-  if (!await contractsDeployed(node.eth())) {
+  if (!await contracts.contractsDeployed()) {
     console.log("Contracts arent deployed to current network. Exiting.");
     return;
   }

@@ -1,24 +1,49 @@
+import { readFileSync } from "fs";
 import { Address } from "web3x/address";
 import { Eth } from "web3x/eth";
 
 import { Atola } from "./contracts/Atola";
 import { PriceFeed } from "./contracts/PriceFeed";
 
-import deployed from "../smart-contract/config/local.json";
+import { config } from "../config";
 
-export const ADDRESS_ATOLA = Address.fromString(deployed.ATOLA);
-export const ADDRESS_PRICEFEED = Address.fromString(deployed.PRICEFEED);
+interface IDeployedAddresses {
+  XCHF: string;
+  UNISWAP_FACTORY: string;
+  XCHF_EXCHANGE: string;
+  ATOLA: string;
+  PRICEFEED: string;
+}
 
-export const getAtola = (eth: Eth) => {
-  return new Atola(eth, ADDRESS_ATOLA);
-};
+export class Contracts {
+  private static readonly EMPTY_BYTECODE = "0x";
 
-export const getPriceFeed = (eth: Eth) => {
-  return new PriceFeed(eth, ADDRESS_PRICEFEED);
-};
+  public readonly ADDRESS_ATOLA: Address;
+  public readonly ADDRESS_PRICEFEED: Address;
 
-export const contractsDeployed = async (eth: Eth) => {
-  const isAtolaDeployed = await eth.getCode(ADDRESS_ATOLA) !== "0x";
-  const isPriceFeedDeployed = await eth.getCode(ADDRESS_PRICEFEED) !== "0x";
-  return isAtolaDeployed && isPriceFeedDeployed;
-};
+  private chain: string;
+
+  constructor(private eth: Eth) {
+    this.chain = config.chain;
+
+    const path = "./smart-contract/config/" + this.chain + ".json";
+    const deployed: IDeployedAddresses = JSON.parse(readFileSync(path, "utf8"));
+
+    this.ADDRESS_ATOLA = Address.fromString(deployed.ATOLA);
+    this.ADDRESS_PRICEFEED = Address.fromString(deployed.PRICEFEED);
+  }
+
+  public atola = () => {
+    return new Atola(this.eth, this.ADDRESS_ATOLA);
+  }
+
+  public priceFeed = () => {
+    return new PriceFeed(this.eth, this.ADDRESS_PRICEFEED);
+  }
+
+  public contractsDeployed = async () => {
+    const isAtolaDeployed = await this.eth.getCode(this.ADDRESS_ATOLA) !== Contracts.EMPTY_BYTECODE;
+    const isPriceFeedDeployed = await this.eth.getCode(this.ADDRESS_PRICEFEED) !== Contracts.EMPTY_BYTECODE;
+    return isAtolaDeployed && isPriceFeedDeployed;
+  }
+}

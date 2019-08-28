@@ -20,7 +20,7 @@ import { Eth } from "web3x/eth";
 import { Net } from "web3x/net";
 import { WebsocketProvider } from "web3x/providers";
 import { Wallet } from "web3x/wallet";
-import { config } from "../../config";
+import * as config from "../../config.json";
 
 const promptGet = (properties: object) => {
   return new Promise<any>((resolve, reject) => {

@@ -16,6 +16,8 @@
 
 export const config = {
   debug: true,
+  reconnectPeriodMs: 2000,
+  reconnectMaxTries: 10,
   ipc_provider: {
     url: "/tmp/geth.ipc",
   },

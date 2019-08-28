@@ -19,47 +19,130 @@ import { Sync } from "web3x/formatters/output-syncing-formatter";
 import { Net } from "web3x/net";
 import { WebsocketProvider } from "web3x/providers";
 
+import { config } from "../config";
+
 export interface INodeStatus {
   is_syncing: boolean | Sync;
+  is_connected: boolean;
 }
 
+/**
+ * Node constructor.
+ *
+ * This simplifies the connection and the calls to the ethereum node.
+ * It's necessary to call `node.waitForConnection()` after constructor.
+ *
+ * @param path The node websocket url
+ */
 export class Node {
-  public readonly provider: WebsocketProvider;
-  public readonly eth: Eth;
-  public readonly net: Net;
+  private _provider: WebsocketProvider;
+  private _eth: Eth;
+  private _net: Net;
+  private _accounts: Address[];
 
-  private accounts: Address[];
+  private _isConnected = false;
 
-  constructor(providerUrl: string) {
-    this.provider = new WebsocketProvider(providerUrl);
-    this.eth = new Eth(this.provider);
-    this.net = new Net(this.eth);
+  constructor(private path: string) {
+    this._provider = new WebsocketProvider(this.path);
+    this._eth = new Eth(this._provider);
+    this._net = new Net(this._eth);
 
     // avoiding undefined object
-    this.accounts = [];
-
-    this.showInfos();
+    this._accounts = [];
   }
 
-  public init = async () => {
-    this.accounts = await this.eth.getAccounts();
+  // PUBLICS.
+
+  /**
+   * Wait for connection to node.
+   *
+   * This needs to be called after the constructor. You can specify the amount
+   * of tries and the period between tries in the config.ts file.
+   * It will try to reach the node until connection or timeout.
+   *
+   * @return A Promise<void>, resolved when connected, rejected when timeout.
+   */
+  public waitForConnection = () => {
+    return new Promise<void>(async (resolve, reject) => {
+      if (await this.isConnected()) {
+        // init and resolve.
+        this.init();
+        resolve();
+      } else {
+        // start reconnect routine
+        this.reconnectRoutine(resolve, reject);
+      }
+    });
   }
 
-  public getAccounts = () => {
-    return this.accounts;
+  public accounts = () => {
+    return this._accounts;
   }
 
   public getStatus = async (): Promise<INodeStatus> => {
-    const isSyncing = await this.eth.isSyncing();
-
     return {
-      is_syncing: isSyncing,
+      is_syncing: await this._eth.isSyncing(),
+      is_connected: this._isConnected,
     };
   }
 
+  // GETTERS.
+
+  public provider = () => {
+    return this._provider;
+  }
+
+  public eth = () => {
+    return this._eth;
+  }
+
+  public net = () => {
+    return this._net;
+  }
+
+  // PRIVATES.
+
+  private reconnectRoutine = async (resolve: () => void, reject: () => void, tryCount = 0) => {
+    // timeout
+    if (tryCount >= config.reconnectMaxTries) {
+      reject();
+      return;
+    }
+    // try reconnect and check connection. retry after
+    await this.reconnect();
+    if (await this.isConnected()) {
+      this.init();
+      resolve();
+    } else {
+      console.log(`Not connected. Retrying. ${tryCount + 1}/${config.reconnectMaxTries}`);
+      setTimeout(this.reconnectRoutine, config.reconnectPeriodMs, resolve, reject, tryCount + 1);
+    }
+  }
+
+  private reconnect = async () => {
+    this._provider = new WebsocketProvider(this.path);
+    this._eth = new Eth(this._provider);
+    this._net = new Net(this._eth);
+  }
+
+  private isConnected = async () => {
+    try {
+      await this._eth.getGasPrice();
+      this._isConnected = true;
+    } catch (e) {
+      this._isConnected = false;
+    }
+    return this._isConnected;
+  }
+
+  private init = async () => {
+    this.showInfos();
+    this._accounts = await this._eth.getAccounts();
+  }
+
   private showInfos = async () => {
-    console.log(`Connected to network: ${await this.net.getNetworkType()}`);
-    console.log(`Network Id: ${await this.eth.getId()}`);
-    console.log(`Node info: ${await this.eth.getNodeInfo()}`);
+    console.log(`Connected to network: ${await this._net.getNetworkType()}`);
+    console.log(`Network Id: ${await this._eth.getId()}`);
+    console.log(`Node info: ${await this._eth.getNodeInfo()}`);
   }
 }

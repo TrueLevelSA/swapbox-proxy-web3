@@ -34,7 +34,7 @@ const ATOLA_CONTRACT_ADDRESS = Address.fromString(deployed.ATOLA);
 async function main() {
   // Initialization
   const node = new Node(config.websocket_provider.url);
-  await node.init();
+  await node.waitForConnection();
 
   const atola = new Atola(node.eth, ATOLA_CONTRACT_ADDRESS);
   const priceFeed = new PriceFeed(node.eth, PRICEFEED_CONTRACT_ADDRESS);

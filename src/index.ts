@@ -41,6 +41,24 @@ async function main() {
     return;
   }
 
+  const machineAddress = node.accounts()[0];
+
+  const zmq = new Zmq(
+    config.zmq.url_pub_price,
+    config.zmq.url_pub_status,
+    config.zmq.url_replier,
+    atola,
+    priceFeed,
+    machineAddress,
+  );
+
+  // STATUS UPDATES
+  const statusUpdates = async () => {
+    const nodeStatus = await node.getStatus();
+    zmq.sendStatus(nodeStatus);
+    setTimeout(statusUpdates, 1000);
+  };
+  statusUpdates();
 
   // PRICE TICKER.
   // first time

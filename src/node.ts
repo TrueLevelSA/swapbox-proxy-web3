@@ -41,6 +41,7 @@ export class Node {
   private _accounts: Address[];
 
   private _isConnected = false;
+  private _isSyncing: boolean | Sync = true;
 
   constructor(private path: string) {
     this._provider = new WebsocketProvider(this.path);
@@ -80,8 +81,10 @@ export class Node {
   }
 
   public getStatus = async (): Promise<INodeStatus> => {
+    this._isSyncing = await this._eth.isSyncing();
+
     return {
-      is_syncing: await this._eth.isSyncing(),
+      is_syncing: await this._isSyncing,
       is_connected: this._isConnected,
     };
   }
@@ -98,6 +101,10 @@ export class Node {
 
   public net = () => {
     return this._net;
+  }
+
+  public isSyncing = () => {
+    return this._isSyncing;
   }
 
   // PRIVATES.

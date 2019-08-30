@@ -25,27 +25,14 @@ async function main() {
   const node = new Node(config.websocket_provider.url);
   await node.waitForConnection();
 
-  // retrieve atola and pricefeed contracts.
+  // detect contracts on network if node is in sync
   const contracts = new Contracts(node.eth());
-  const atola = contracts.atola();
-  const priceFeed = contracts.priceFeed();
-
-  // detect contracts on network.
-  if (!await contracts.contractsDeployed()) {
+  if (!node.isSyncing() && !await contracts.contractsDeployed()) {
     console.log("Contracts arent deployed to current network. Exiting.");
     return;
   }
 
-  const machineAddress = node.accounts()[0];
-
-  const zmq = new Zmq(
-    config.zmq.url_pub_price,
-    config.zmq.url_pub_status,
-    config.zmq.url_replier,
-    atola,
-    priceFeed,
-    machineAddress,
-  );
+  const zmq = new Zmq(node);
 
   // STATUS UPDATES
   const statusUpdates = async () => {
@@ -56,8 +43,10 @@ async function main() {
   statusUpdates();
 
   // PRICE TICKER.
-  // first time
-  zmq.updatePriceticker();
+  // first time. only if node is in sync
+  if (!node.isSyncing()) {
+    zmq.updatePriceticker();
+  }
   // update price ticker at each block
   node.eth().subscribe("newBlockHeaders")
     .on("data", async () => {

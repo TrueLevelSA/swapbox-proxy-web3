@@ -21,8 +21,11 @@ import { socket } from "zeromq";
 import { Atola } from "./contracts/Atola";
 import { PriceFeed } from "./contracts/PriceFeed";
 
-import { INodeStatus } from "./node";
+import { Contracts } from "./contracts";
+import { INodeStatus, Node } from "./node";
 import { processBuyEthOrder } from "./processing/orders";
+
+import * as config from "../config.json";
 
 interface IReply {
   status: "success" | "error";
@@ -46,22 +49,27 @@ export class Zmq {
   private readonly pubStatus = socket("pub");
   private readonly rep = socket("rep");
 
+  private readonly atola: Atola;
+  private readonly priceFeed: PriceFeed;
+  private readonly machineAddress: Address;
+
   private readonly TOPIC_PRICETICKER = "priceticker";
   private readonly TOPIC_STATUS = "status";
 
-  constructor(
-    private urlPubPrice: string,
-    private urlPubStatus: string,
-    private urlReplier: string,
-    private atola: Atola,
-    private priceFeed: PriceFeed,
-    private machineAddress: Address,
-  ) {
+  constructor(private node: Node) {
     // initialize publisher/responder
-    this.pubPrice.bindSync(this.urlPubPrice);
-    this.pubStatus.bindSync(this.urlPubStatus);
-    this.rep.bindSync(this.urlReplier);
+    this.pubPrice.bindSync(config.zmq.url_pub_price);
+    this.pubStatus.bindSync(config.zmq.url_pub_status);
+    this.rep.bindSync(config.zmq.url_replier);
 
+    // init contracts
+    const contracts = new Contracts(this.node.eth());
+    this.atola = contracts.atola();
+    this.priceFeed = contracts.priceFeed();
+
+    this.machineAddress = node.accounts()[0];
+
+    // init zmq listener for incoming orders
     this.initializeListener();
   }
 
@@ -100,6 +108,15 @@ export class Zmq {
    */
   private initializeListener = () => {
     this.rep.on("message", async (request) => {
+      // exit if node is not connected or not in sync.
+      // it might happen if order is sent after the node went down and the status
+      // hasnt been updated yet.
+      const status = await this.node.getStatus();
+      if (!status.is_connected || status.is_syncing) {
+        console.error("Node is not connected or not in sync");
+        return;
+      }
+
       const reply: IReply = {status: "error", result: "undefined"};
       const message: IMessage = JSON.parse(request.toString());
       console.log("zmq.onMessage:", message);

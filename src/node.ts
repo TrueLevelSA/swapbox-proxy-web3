@@ -23,7 +23,6 @@ import * as config from "../config.json";
 
 export interface INodeStatus {
   is_syncing: boolean | Sync;
-  is_connected: boolean;
 }
 
 /**
@@ -85,7 +84,6 @@ export class Node {
 
     return {
       is_syncing: await this._isSyncing,
-      is_connected: this._isConnected,
     };
   }
 

@@ -75,10 +75,24 @@ export class Node {
     });
   }
 
+  /**
+   * Returns a list of Address representing the accounts of the node.
+   *
+   * The account in first position should be unlocked and representing the
+   * machineAddress
+   *
+   * @return Address[] accounts
+   */
   public accounts = () => {
     return this._accounts;
   }
 
+  /**
+   * Update the `_isSyncing` state of the node and returns the status
+   * according to the `INodeStatus` interface.
+   *
+   * @return Promise<INodeStatus> The status of the node.
+   */
   public getStatus = async (): Promise<INodeStatus> => {
     this._isSyncing = await this._eth.isSyncing();
 

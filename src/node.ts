@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { WebSocketProvider } from "@ethersproject/providers";
-import * as config from "../config.json";
+import config from "./config";
 import { ReplyBackend } from "./messaging/messages/replies";
 import { ReplyOrder } from "./messaging/messages/replies/order";
 import { BlockchainStatus } from "./messaging/messages/replies/status";
@@ -33,19 +33,6 @@ import { outputSyncingFormatter, Sync } from "./types/eth";
  */
 export class Node {
 
-  /**
-   * Returns a connected Node.
-   * 
-   * @param providerUrl websocket address of the provider.
-   * @returns 
-   */
-  public static connect = async (providerUrl: string): Promise<Node> => {
-    let node = new Node(providerUrl);
-    await node.init();
-    await node.waitForConnection();
-    return node;
-  }
-
   private _provider: WebSocketProvider;
   private _accounts: string[];
 
@@ -58,60 +45,24 @@ export class Node {
   }
 
   /**
-   * Check node sync status
+   * Returns a connected Node.
    * 
-   * @returns True if _in sync_, Sync status if _syncing_.
+   * @param providerUrl websocket address of the provider.
+   * @returns A node
    */
-  private isSyncing = async (): Promise<boolean | Sync> => {
-    const sync = await this._provider.send('eth_syncing');
-    return outputSyncingFormatter(sync);
+   public static connect = async (providerUrl: string): Promise<Node> => {
+    let node = new Node(providerUrl);
+    await node.waitForConnection();
+    return node;
   }
 
   /**
-   * Check node listening status.
+   * Gives network infos
    * 
-   * @returns True if is listening, False if not.
+   * @returns 
    */
-  private isListening = async (): Promise<boolean> => {
-    return await this._provider.send('net_listening');
-  }
-
-
-  /**
-   * Tries to reconnect to the node until count is reached.
-   * 
-   * @param resolve Callback when connected
-   * @param reject Callback when timeout
-   * @param tryCount Amount of tries before reject
-   */
-  private reconnectRoutine = async (resolve: () => void, reject: () => void, tryCount = 0) => {
-    // timeout
-    if (tryCount >= config.reconnectMaxTries) {
-      reject();
-      return;
-    }
-    // try reconnect and check connection. retry after
-    await this.reconnect();
-    if (await this.isListening()) {
-      await this.init();
-      resolve();
-    } else {
-      console.log(`Not connected. Retrying. ${tryCount + 1}/${config.reconnectMaxTries}`);
-      setTimeout(this.reconnectRoutine, config.reconnectPeriodMs, resolve, reject, tryCount + 1);
-    }
-  }
-
-  private reconnect = async () => {
-    this._provider = new WebSocketProvider(this.providerUrl);
-  }
-
-  private init = async () => {
-    this.showInfos();
-    this._accounts = await this._provider.listAccounts();
-  }
-
-  private showInfos = async () => {
-    console.log(`Connected to network: ${await this._provider.getNetwork()}`);
+  public network = async () => {
+    return this._provider.getNetwork();
   }
 
   /**
@@ -123,14 +74,12 @@ export class Node {
    *
    * @return A Promise<void>, resolved when connected, rejected when timeout.
    */
-  public waitForConnection = () => {
+   public waitForConnection = () => {
     return new Promise<void>(async (resolve, reject) => {
       if (await this.isListening()) {
-        // init and resolve.
-        await this.init();
+        await this.postConnection();
         resolve();
       } else {
-        // start reconnect routine
         this.reconnectRoutine(resolve, reject);
       }
     });
@@ -201,5 +150,63 @@ export class Node {
       }
     );
     return backend;
+  }
+
+
+  /**
+   * Check node sync status
+   * 
+   * @returns True if _in sync_, Sync status if _syncing_.
+   */
+  private isSyncing = async (): Promise<boolean | Sync> => {
+    const sync = await this._provider.send('eth_syncing');
+    return outputSyncingFormatter(sync);
+  }
+
+  /**
+   * Check node listening status.
+   * 
+   * @returns True if is listening, False if not.
+   */
+  private isListening = async (): Promise<boolean> => {
+    return await this._provider.send('net_listening');
+  }
+
+
+  /**
+   * Tries to reconnect to the node until count is reached.
+   * 
+   * @param resolve Callback when connected
+   * @param reject Callback when timeout
+   * @param tryCount Amount of tries before reject
+   */
+  private reconnectRoutine = async (resolve: () => void, reject: () => void, tryCount = 0) => {
+    // timeout
+    if (tryCount >= config.reconnect_max_tries) {
+      reject();
+      return;
+    }
+    // try reconnect and check connection. retry after
+    await this.reconnect();
+    if (await this.isListening()) {
+      await this.postConnection();
+      resolve();
+    } else {
+      console.log(`Not connected. Retrying. ${tryCount + 1}/${config.reconnect_max_tries}`);
+      setTimeout(this.reconnectRoutine, config.reconnect_period_ms, resolve, reject, tryCount + 1);
+    }
+  }
+  /**
+   * Re
+   */
+  private reconnect = async () => {
+    this._provider = new WebSocketProvider(this.providerUrl);
+  }
+
+  /**
+   * Post connection hook.
+   */
+  private postConnection = async () => {
+    this._accounts = await this._provider.listAccounts();
   }
 }

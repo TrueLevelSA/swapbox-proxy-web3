@@ -18,7 +18,7 @@ import { WebSocketProvider } from "@ethersproject/providers";
 import bip39 from "bip39";
 import { Wallet } from "ethers";
 import * as prompt from "prompt";
-import * as config from "../../config.json";
+import config from "../config";
 
 const promptGet = (properties: object) => {
   return new Promise<any>((resolve, reject) => {

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import * as zmq from "zeromq";
-import * as config from "../../config.json";
+import config from "../config";
 import { ReplyBackend, ReplyOrder, ReplyPrices, ReplyStatus } from "./messages/replies";
 import { RequestBackend, RequestBase, RequestOrder } from "./messages/requests";
 
@@ -39,10 +39,9 @@ export class Messenger {
   constructor(rc: RequestCallbacks) {
     this._rc = rc;
 
-    this.pub.bindSync(config.zmq.url_pub_status);
-    this.rep.bindSync(config.zmq.url_replier);
-
-    this.initializeListener();
+    this.pub.bindSync(config.messenger.publish.url);
+    this.rep.bindSync(config.messenger.request.url);
+    this.rep.on("message", this.handleIncomingMessage);
   }
 
   /**
@@ -74,41 +73,40 @@ export class Messenger {
   }
 
   /**
-   * Intialize zmq req/rep.
+   * Handle incoming messages.
+   *
+   * @param message 
    */
-  private initializeListener = () => {
-    this.rep.on("message", async (message: string) => {
-      if(config.debug) {
-        console.log("zmq.onMessage:", message);
-      }
+  public handleIncomingMessage = async (message: string) => {
+    if(config.debug) {
+      console.log("zmq.onMessage:", message);
+    }
 
-      let request: RequestBase;
-      try {
-        request = JSON.parse(message.toString());
-      } catch (e) {
-        console.log("Parsing error:", e);
-        return;
-      }
+    let request: RequestBase;
+    try {
+      request = JSON.parse(message.toString());
+    } catch (e) {
+      console.log("Parsing error:", e);
+      return;
+    }
 
-      let reply: any;
-      switch (request.request) {
-        case RequestBase.REQUEST_BACKEND: {
-          reply = this._rc.onRequestBackend(request as RequestBackend);
-          break;
-        }
-        case RequestBase.REQUEST_ORDER: {
-          reply = this._rc.onRequestOrder(request as RequestOrder);
-          break;
-        }
-        default: {
-          // log unknown request
-          console.log("unknown request");
-        }
+    let reply: any;
+    switch (request.request) {
+      case RequestBase.REQUEST_BACKEND: {
+        reply = this._rc.onRequestBackend(request as RequestBackend);
+        break;
       }
+      case RequestBase.REQUEST_ORDER: {
+        reply = this._rc.onRequestOrder(request as RequestOrder);
+        break;
+      }
+      default: {
+        console.log("unknown request");
+      }
+    }
 
-      if (reply !== undefined) {
-        this.rep.send(JSON.stringify(reply));
-      }
-    });
+    if (reply !== undefined) {
+      this.rep.send(JSON.stringify(reply));
+    }
   }
 }

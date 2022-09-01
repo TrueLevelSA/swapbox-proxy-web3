@@ -16,15 +16,25 @@
 
 import { Node } from "./node";
 
-import * as config from "../config.json";
-import { Messenger } from "./messaging/messenger";
-import { RequestBackend, RequestOrder } from "./messaging/messages/requests";
+import { cpuCurrentSpeed, cpuTemperature } from "systeminformation";
+import config from "./config";
 import { ReplyBackend, ReplyOrder, ReplyStatus } from "./messaging/messages/replies";
-import { cpus } from "os";
 import { SystemStatus } from "./messaging/messages/replies/status";
+import { RequestBackend, RequestOrder } from "./messaging/messages/requests";
+import { Messenger } from "./messaging/messenger";
+
+const getSystemStatus = async (): Promise<SystemStatus> => {
+  const speed = await cpuCurrentSpeed();
+  const temp = await cpuTemperature();
+  return new SystemStatus(temp.main, speed.avg);
+}
 
 async function main() {
   const node = await Node.connect(config.websocket_provider.url);
+  if (config.debug) {
+    const network = await node.network();
+    console.log(`Connected to network: ${network.name}:${network.chainId}`);
+  }
 
   const messenger = new Messenger({
     onRequestBackend: (request: RequestBackend): Promise<ReplyBackend> => {
@@ -35,18 +45,18 @@ async function main() {
     }
   });
 
+  const publishStatusPeriodMs = config.messenger.publish.status_period_s * 1000;
   const statusUpdates = async () => {
     const nodeStatus = await node.getStatus();
-    // TODO: do system status
-    const systemStatus = new SystemStatus(9, cpus()[0].speed);
+    const systemStatus = await getSystemStatus();
     const status = new ReplyStatus(systemStatus, nodeStatus);
     messenger.sendStatus(status);
-    setTimeout(statusUpdates, 1000);
+    setTimeout(statusUpdates, publishStatusPeriodMs);
   };
   statusUpdates();
 
   const pricesUpdate = async () => {
-    // TODO: get prices
+    
     let prices: any;
     messenger.sendPrices(prices);
   }

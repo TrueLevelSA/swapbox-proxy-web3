@@ -1,18 +1,22 @@
 {
   "chain": "local",
   "debug": true,
-  "reconnectPeriodMs": 2000,
-  "reconnectMaxTries": 10,
+  "reconnect_period_ms": 2000,
+  "reconnect_max_tries": 10,
   "ipc_provider": {
     "url": "/tmp/geth.ipc"
   },
   "websocket_provider": {
     "url": "ws://127.0.0.1:8545"
   },
-  "zmq": {
-    "url_pub_price": "tcp://0.0.0.0:5556",
-    "url_replier": "tcp://0.0.0.0:5557",
-    "url_pub_status": "tcp://0.0.0.0:5558"
+  "messenger": {
+    "publish": {
+      "url": "tcp://0.0.0.0:5556",
+      "status_period_s": 5
+    },
+    "request": {
+      "url": "tcp://0.0.0.0:5557"
+    }
   },
   "contracts": {
     "swapbox": "0x0000000000000000000000000000000000000000",

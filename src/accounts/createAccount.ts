@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { Wallet } from 'web3x/wallet';
 import * as prompt from 'prompt';
 import bip39 from 'bip39';
+import { Wallet } from 'ethers';
 
 async function main() {
 
@@ -40,7 +40,7 @@ async function main() {
     try {
 
       var mnemonic = bip39.generateMnemonic()
-      const decryptedWallet = await Wallet.fromMnemonic(mnemonic, 1)
+      const decryptedWallet = Wallet.fromMnemonic(mnemonic);
 
       const keystore = await decryptedWallet.encrypt(result.password);
 
@@ -57,7 +57,7 @@ async function main() {
       console.log();
 
       console.log("---decryptedWallet start---");
-      console.log("0x"+decryptedWallet.accounts[0].privateKey.toString('hex'));
+      console.log(decryptedWallet.privateKey);
       console.log("---decryptedWallet end---");
 
 

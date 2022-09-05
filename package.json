@@ -6,45 +6,32 @@
   "scripts": {
     "accounts:genkey": "node ./dist/src/accounts/createAccount.js",
     "accounts:addkey": "node ./dist/src/accounts/addAccount.js",
-    "build:abis": "cd smart-contract/ && yarn truffle compile",
-    "build:types": "web3x-codegen && tsc",
-    "build": "yarn build:abis && yarn build:types",
+    "build:types": "cp -R smart-contract/typechain src/typechain",
+    "build:src": "tsc --version && tsc",
+    "build": "yarn build:types && yarn build:src",
     "buildAndStart": "yarn build && yarn start",
-    "clean:abis": "cd smart-contract/ && yarn clean:truffle",
-    "clean:types": "rm -rf src/contracts/",
-    "clean": "yarn clean:abis && yarn clean:types",
+    "clean:types": "rm -rf src/typechain/",
+    "clean": "yarn clean:types",
     "cleanAndBuild": "yarn clean && yarn build",
     "deploy": "cd smart-contract/ && yarn truffle migrate --reset",
     "start": "node ./dist/src",
     "start:dev": "nodemon ./dist/src/index.js",
-    "test": "jest",
-    "postinstall": "git submodule update --init && cd smart-contract/ && yarn install"
-  },
-  "jest": {
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "testRegex": ".*\\.test\\.ts$",
-    "moduleFileExtensions": [
-      "ts",
-      "js"
-    ]
+    "postinstall": "git submodule update --init && cd smart-contract/ && yarn install && yarn compile"
   },
   "dependencies": {
     "@types/bip39": "^2.4.2",
-    "@types/zeromq": "^4.6.1",
-    "bn.js": "^5.0.0",
+    "@types/chai": "^4.3.3",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^18.7.14",
+    "@types/zeromq": "^5.2.1",
+    "ethers": "^5.7.0",
     "prompt": "^1.0.0",
     "truffle": "5.0.26",
-    "ts-jest": "^23.10.5",
-    "typescript": "^3.3.3",
-    "web3x": "^4.0.4",
-    "zeromq": "^5.1.0"
+    "typescript": "^4.8.2",
+    "zeromq": "^5.2.8"
   },
   "devDependencies": {
-    "@types/jest": "^23.3.12",
-    "jest": "^23.6.0",
-    "nodemon": "^1.18.5",
-    "web3x-codegen": "^4.0.1"
+    "@nomiclabs/hardhat-ethers": "^2.1.1",
+    "nodemon": "^1.18.5"
   }
 }

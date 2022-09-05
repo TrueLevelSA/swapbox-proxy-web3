@@ -14,46 +14,43 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { Contracts } from "./contracts";
 import { Node } from "./node";
-import { Zmq } from "./zmq";
 
 import * as config from "../config.json";
+import { Messenger } from "./messaging/messenger";
+import { RequestBackend, RequestOrder } from "./messaging/messages/requests";
+import { ReplyBackend, ReplyOrder, ReplyStatus } from "./messaging/messages/replies";
+import { cpus } from "os";
+import { SystemStatus } from "./messaging/messages/replies/status";
 
 async function main() {
-  // Initialization
-  const node = new Node(config.websocket_provider.url);
-  await node.waitForConnection();
+  const node = await Node.connect(config.websocket_provider.url);
 
-  // detect contracts on network if node is in sync
-  const contracts = new Contracts(node.eth());
-  if (!node.isSyncing() && !await contracts.contractsDeployed()) {
-    console.log("Contracts arent deployed to current network. Exiting.");
-    return;
-  }
+  const messenger = new Messenger({
+    onRequestBackend: (request: RequestBackend): Promise<ReplyBackend> => {
+      return node.handleRequestBackend(request);
+    },
+    onRequestOrder: async (request: RequestOrder): Promise<ReplyOrder> => {
+      return node.handleRequestOrder(request);
+    }
+  });
 
-  const zmq = new Zmq(node);
-
-  // STATUS UPDATES
   const statusUpdates = async () => {
     const nodeStatus = await node.getStatus();
-    zmq.sendStatus(nodeStatus);
+    // TODO: do system status
+    const systemStatus = new SystemStatus(9, cpus()[0].speed);
+    const status = new ReplyStatus(systemStatus, nodeStatus);
+    messenger.sendStatus(status);
     setTimeout(statusUpdates, 1000);
   };
   statusUpdates();
 
-  // PRICE TICKER.
-  // first time. only if node is in sync
-  if (!node.isSyncing()) {
-    zmq.updatePriceticker();
+  const pricesUpdate = async () => {
+    // TODO: get prices
+    let prices: any;
+    messenger.sendPrices(prices);
   }
-  // update price ticker at each block
-  node.eth().subscribe("newBlockHeaders")
-    .on("data", async () => {
-      await zmq.updatePriceticker();
-    },
-  ).on("error", console.error);
-
+  pricesUpdate();
 }
 
 main().catch(console.error);

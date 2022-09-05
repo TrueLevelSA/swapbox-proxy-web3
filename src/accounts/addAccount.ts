@@ -14,12 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import { WebSocketProvider } from "@ethersproject/providers";
 import bip39 from "bip39";
+import { Wallet } from "ethers";
 import * as prompt from "prompt";
-import { Eth } from "web3x/eth";
-import { Net } from "web3x/net";
-import { WebsocketProvider } from "web3x/providers";
-import { Wallet } from "web3x/wallet";
 import * as config from "../../config.json";
 
 const promptGet = (properties: object) => {
@@ -36,10 +34,7 @@ const promptGet = (properties: object) => {
 
 async function main() {
   // Construct necessary components.
-  const provider = new WebsocketProvider(config.websocket_provider.url);
-  const eth = new Eth(provider);
-  const net = new Net(eth);
-
+  const provider = new WebSocketProvider(config.websocket_provider.url);
   // user inputs
   let result: any;
 
@@ -63,21 +58,14 @@ async function main() {
   // validate mnemonic or quit
   if (!bip39.validateMnemonic(result.mnemonic)) {
     console.error("Invalid mnemonic.  Exiting");
-    provider.disconnect();
+    provider.destroy();
     process.exit(1);
   }
 
-  const decryptedWallet = await Wallet.fromMnemonic(result.mnemonic, 1);
+  const wallet = Wallet.fromMnemonic(result.mnemonic);
+  console.log("Added account: ", wallet.address);
 
-  // If you want eth to use your accounts for signing transaction, set the wallet.
-  eth.wallet = decryptedWallet;
-
-  // Optionally you can specify a default 'from' address.
-  eth.defaultFromAddress = decryptedWallet.accounts[0].address;
-
-  console.log("Added account: ", decryptedWallet.accounts[0].address.toString());
-
-  provider.disconnect();
+  provider.destroy();
 }
 
 main().catch(console.error);

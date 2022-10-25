@@ -1,7 +1,5 @@
-export class ReplyOrder {
-  readonly confirm: boolean
+import { ReplyBase } from "./base";
 
-  constructor(confirm: boolean) {
-    this.confirm = confirm
-  }
+export interface ReplyOrder extends ReplyBase {
+  tx_confirmed: boolean
 }

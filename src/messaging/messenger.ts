@@ -17,6 +17,7 @@
 import * as zmq from "zeromq";
 import config from "../config";
 import { ReplyBackend, ReplyOrder, ReplyPrices, ReplyStatus } from "./messages/replies";
+import { ERROR_BAD_REQUEST } from "./messages/replies/base";
 import { RequestBackend, RequestBase, RequestOrder } from "./messages/requests";
 
 /**
@@ -77,9 +78,9 @@ export class Messenger {
    *
    * @param message 
    */
-  public handleIncomingMessage = async (message: string) => {
+  public handleIncomingMessage = async (message: Buffer) => {
     if(config.debug) {
-      console.log("zmq.onMessage:", message);
+      console.log("zmq.onMessage:", message.toString());
     }
 
     let request: RequestBase;
@@ -87,6 +88,7 @@ export class Messenger {
       request = JSON.parse(message.toString());
     } catch (e) {
       console.log("Parsing error:", e);
+      this.rep.send(JSON.stringify({success: false, error: ERROR_BAD_REQUEST}));
       return;
     }
 
@@ -101,7 +103,8 @@ export class Messenger {
         break;
       }
       default: {
-        console.log("unknown request");
+        this.rep.send(JSON.stringify({success: false, error: ERROR_BAD_REQUEST}));
+        return;
       }
     }
 

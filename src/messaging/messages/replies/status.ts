@@ -1,25 +1,20 @@
 import { Sync } from "../../../types/eth";
+import { ReplyBase } from "./base";
 
-export class SystemStatus {
-  constructor(
-    readonly temp: number,
-    readonly cpu: number
-  ) { }
+export interface SystemStatus {
+  temp: number
+  cpu: number
 }
 
-export class BlockchainStatus {
-  constructor(
-    readonly current_block: {
+export interface BlockchainStatus {
+  current_block: {
       number: number;
       timestamp: number;
-    },
-    readonly syncing: boolean | Sync
-  ) { }
+  }
+  syncing: boolean | Sync
 }
 
-export class ReplyStatus {
-  constructor(
-    readonly system: SystemStatus,
-    readonly blockchain: BlockchainStatus
-  ) { }
+export interface ReplyStatus extends ReplyBase {
+  system: SystemStatus
+  blockchain: BlockchainStatus
 }

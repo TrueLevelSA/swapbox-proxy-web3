@@ -16,21 +16,14 @@
 
 import { WebSocketProvider } from "@ethersproject/providers";
 import config from "./config";
-import { ReplyBackend } from "./messaging/messages/replies";
-import { ReplyOrder } from "./messaging/messages/replies/order";
+import { ReplyBackend, ReplyOrder } from "./messaging/messages/replies";
+import { Token } from "./messaging/messages/replies/backend";
 import { Price } from "./messaging/messages/replies/prices";
 import { BlockchainStatus } from "./messaging/messages/replies/status";
 import { RequestBackend, RequestOrder } from "./messaging/messages/requests";
 import { ERC20__factory, PriceFeed, PriceFeed__factory, SwapboxUniswapV2, SwapboxUniswapV2__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Router02, UniswapV2Router02__factory } from "./typechain";
 import { outputSyncingFormatter, Sync } from "./types/eth";
 import { computeBuyPrice, computeSellPrice } from "./utils/prices";
-
-interface Token {
-  symbol: string,
-  address: string,
-  pairAddress: string,
-  decimals: number
-}
 
 /**
  * Node allows to send and retrieve to/from the Ethereum node.
@@ -160,12 +153,14 @@ export class Node {
     for (const tokenAddress of supportTokenAddresses) {
       const token = ERC20__factory.connect(tokenAddress, this._provider.getSigner());
       const symbol = await token.symbol();
+      const name = await token.name();
       const decimals = await token.decimals();
       const pairAddress = await this.factory.getPair(tokenAddress, this._baseToken);
       tokens.push({
-        symbol: symbol,
         address: tokenAddress,
         pairAddress: pairAddress,
+        symbol: symbol,
+        name: name,
         decimals: decimals,
       });
     }
@@ -243,6 +238,7 @@ export class Node {
       const token = this.getToken(reserve.token);
       const buyPrice = computeBuyPrice(token.decimals, reserve.reserve0, reserve.reserve1);
       const sellPrice = computeSellPrice(token.decimals, reserve.reserve0, reserve.reserve1);
+
       // TODO: get fees
       const fees = 0;
 
@@ -258,7 +254,15 @@ export class Node {
     return prices;
   }
 
+  /**
+   * Handle an order request.
+   * 
+   * @param request 
+   * @returns 
+   */
   public handleRequestOrder = async (request: RequestOrder): Promise<ReplyOrder> => {
+    let confirm = false;
+
     if (request.request === "buy") {
       await this.swapbox.buyEth(
         request.order.amount_in,
@@ -266,32 +270,33 @@ export class Node {
         request.order.client,
         0, // FIX: add deadline to request
       );
+      // TODO: Check tx went through without revert and event was triggered.
+      confirm = true;
     } else {
       console.log("order not supported");
     }
 
-    const reply = new ReplyOrder(true);
-    return reply;
+    return {
+      success: true,
+      tx_confirmed: confirm,
+    }
   }
 
+  /**
+   * Handle a backend request.
+   * 
+   * @param request 
+   * @returns 
+   */
   public handleRequestBackend = async (request: RequestBackend): Promise<ReplyBackend> => {
-    if (config.debug) {
-      console.log(request.request);
-    }
-    // TODO: Fetch backend
-    const backend = new ReplyBackend(
-      {
+    // TODO: Use and read global config
+    return {
+      success: true,
+      backend: {
         name: "zkSync",
         baseCurrency: "CHF",
-        tokens: [
-          {
-            symbol: "DAI",
-            name: "DAI Stablecoin",
-            decimals: 18,
-          }
-        ]
+        tokens: this._tokens,
       }
-    );
-    return backend;
+    };
   }
 }

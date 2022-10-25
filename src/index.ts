@@ -26,7 +26,7 @@ import { Messenger } from "./messaging/messenger";
 const getSystemStatus = async (): Promise<SystemStatus> => {
   const speed = await cpuCurrentSpeed();
   const temp = await cpuTemperature();
-  return new SystemStatus(temp.main, speed.avg);
+  return { temp: temp.main, cpu: speed.avg };
 }
 
 async function main() {
@@ -44,7 +44,7 @@ async function main() {
   const statusUpdates = async () => {
     const nodeStatus = await node.getStatus();
     const systemStatus = await getSystemStatus();
-    const status = new ReplyStatus(systemStatus, nodeStatus);
+    const status: ReplyStatus = { success: true, blockchain: nodeStatus, system: systemStatus }
     messenger.sendStatus(status);
     setTimeout(statusUpdates, publishStatusPeriodMs);
   };
@@ -53,7 +53,7 @@ async function main() {
   const publicPricesPeriodMs = config.messenger.publish.prices_period_s * 1000;
   const pricesUpdate = async () => {
     const prices = await node.getPrices();
-    const reply = new ReplyPrices(prices);
+    const reply: ReplyPrices = {success: true, prices: prices};
     messenger.sendPrices(reply);
     setTimeout(pricesUpdate, publicPricesPeriodMs);
   }

@@ -14,7 +14,11 @@ A connector to connect to parity light node with web3x and send over ZMQ.
 
 ### Install
 
-```
+```bash
+# Init and clone smart-contract submodule
+git submodule update --init
+
+# Install project dependencies and build
 yarn install && yarn build
 ```
 

@@ -6,7 +6,7 @@
   "scripts": {
     "accounts:genkey": "node ./dist/accounts/createAccount.js",
     "accounts:addkey": "node ./dist/accounts/addAccount.js",
-    "build:types": "cp -R smart-contract/typechain src/typechain",
+    "build:types": "cd smart-contract/ && yarn install && yarn compile && cd .. && cp -R smart-contract/typechain src/",
     "build:src": "tsc --version && tsc",
     "build": "yarn build:types && yarn build:src",
     "buildAndStart": "yarn build && yarn start",
@@ -14,10 +14,9 @@
     "clean:types": "rm -rf src/typechain/",
     "clean": "yarn clean:src && yarn clean:types",
     "cleanAndBuild": "yarn clean && yarn build",
-    "deploy": "cd smart-contract/ && yarn truffle migrate --reset",
+    "deploy": "cd smart-contract/ && yarn run deploy",
     "start": "node ./dist",
-    "start:dev": "nodemon ./dist/index.js",
-    "postinstall": "git submodule update --init && cd smart-contract/ && yarn install && yarn compile"
+    "start:dev": "nodemon ./dist/index.js"
   },
   "dependencies": {
     "@types/bip39": "^2.4.2",
@@ -35,7 +34,11 @@
     "zeromq": "^5.2.8"
   },
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.1.1",
+    "@nomiclabs/hardhat-ethers": "^2.2.1",
+    "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "@typescript-eslint/parser": "^5.37.0",
+    "eslint": "^8.23.1",
+    "hardhat": "^2.12.3",
     "nodemon": "^1.18.5"
   }
 }

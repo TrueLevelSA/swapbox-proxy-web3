@@ -90,14 +90,14 @@ export class Messenger {
       return;
     }
 
-    let reply: any;
+    let reply: ReplyBackend | ReplyOrder | undefined;
     switch (request.request) {
       case RequestBase.REQUEST_BACKEND: {
-        reply = this._rc.onRequestBackend(request as RequestBackend);
+        reply = await this._rc.onRequestBackend(request as RequestBackend);
         break;
       }
       case RequestBase.REQUEST_ORDER: {
-        reply = this._rc.onRequestOrder(request as RequestOrder);
+        reply = await this._rc.onRequestOrder(request as RequestOrder);
         break;
       }
       default: {
@@ -105,7 +105,7 @@ export class Messenger {
       }
     }
 
-    if (reply !== undefined) {
+    if (reply) {
       this.rep.send(JSON.stringify(reply));
     }
   }

@@ -18,11 +18,19 @@ import { WebSocketProvider } from "@ethersproject/providers";
 import config from "./config";
 import { ReplyBackend } from "./messaging/messages/replies";
 import { ReplyOrder } from "./messaging/messages/replies/order";
+import { Price } from "./messaging/messages/replies/prices";
 import { BlockchainStatus } from "./messaging/messages/replies/status";
 import { RequestBackend, RequestOrder } from "./messaging/messages/requests";
-import { SwapboxUniswapV2, SwapboxUniswapV2__factory } from "./typechain";
+import { ERC20__factory, PriceFeed, PriceFeed__factory, SwapboxUniswapV2, SwapboxUniswapV2__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Router02, UniswapV2Router02__factory } from "./typechain";
 import { outputSyncingFormatter, Sync } from "./types/eth";
+import { computeBuyPrice, computeSellPrice } from "./utils/prices";
 
+interface Token {
+  symbol: string,
+  address: string,
+  pairAddress: string,
+  decimals: number
+}
 
 /**
  * Node allows to send and retrieve to/from the Ethereum node.
@@ -36,12 +44,25 @@ export class Node {
   private _provider: WebSocketProvider;
   private _accounts: string[];
 
+  private _tokens: Token[]
+
   readonly swapbox: SwapboxUniswapV2;
+  readonly pricefeed: PriceFeed;
+  readonly factory: UniswapV2Factory;
+  readonly router: UniswapV2Router02;
+  private _baseToken: string;
 
   private constructor(private providerUrl: string) {
     this._provider = new WebSocketProvider(this.providerUrl);
     this._accounts = [];
-    this.swapbox = SwapboxUniswapV2__factory.connect(config.contracts.swapbox, this._provider.getSigner());
+    this._tokens = [];
+
+    const signer = this._provider.getSigner();
+    this.swapbox = SwapboxUniswapV2__factory.connect(config.contracts.swapbox, signer);
+    this.pricefeed = PriceFeed__factory.connect(config.contracts.pricefeed, signer);
+    this.factory = UniswapV2Factory__factory.connect(config.contracts.factory, signer);
+    this.router = UniswapV2Router02__factory.connect(config.contracts.router, signer);
+    this._baseToken = config.contracts.base_token;
   }
 
   /**
@@ -50,8 +71,8 @@ export class Node {
    * @param providerUrl websocket address of the provider.
    * @returns A node
    */
-   public static connect = async (providerUrl: string): Promise<Node> => {
-    let node = new Node(providerUrl);
+  public static connect = async (providerUrl: string): Promise<Node> => {
+    const node = new Node(providerUrl);
     await node.waitForConnection();
     return node;
   }
@@ -60,103 +81,6 @@ export class Node {
    * Gives network infos
    * 
    * @returns 
-   */
-  public network = async () => {
-    return this._provider.getNetwork();
-  }
-
-  /**
-   * Wait for connection to node.
-   *
-   * This needs to be called after the constructor. You can specify the amount
-   * of tries and the period between tries in the config.ts file.
-   * It will try to reach the node until connection or timeout.
-   *
-   * @return A Promise<void>, resolved when connected, rejected when timeout.
-   */
-   public waitForConnection = () => {
-    return new Promise<void>(async (resolve, reject) => {
-      if (await this.isListening()) {
-        await this.postConnection();
-        resolve();
-      } else {
-        this.reconnectRoutine(resolve, reject);
-      }
-    });
-  }
-
-  /**
-   * Returns a list of Address representing the accounts of the node.
-   *
-   * The account in first position should be unlocked and representing the
-   * machineAddress
-   *
-   * @return Address[] accounts
-   */
-  public accounts = (): string[] => {
-    return this._accounts;
-  }
-
-  /**
-   * Update the `_isSyncing` state of the node and returns the status
-   * according to the `INodeStatus` interface.
-   *
-   * @return Promise<INodeStatus> The status of the node.
-   */
-  public getStatus = async (): Promise<BlockchainStatus> => {
-    const isSyncing = await this.isSyncing();
-    const blockNumber = await this._provider.getBlockNumber()
-    const blockTimestamp = (await this._provider.getBlock(blockNumber)).timestamp;
-
-    return {
-      current_block: {
-        number: blockNumber,
-        timestamp: blockTimestamp,
-      },
-      syncing: isSyncing,
-    };
-  }
-
-  public handleRequestOrder = async (request: RequestOrder): Promise<ReplyOrder> => {
-    let reply: ReplyOrder;
-    if (request.request === "buy") {
-      await this.swapbox.buyEth(
-        request.order.amount_in,
-        request.order.minimum_amount_out,
-        request.order.client,
-      );
-    } else {
-      console.log("order not supported");
-    }
-
-    return {
-      confirm: true
-    };
-  }
-
-  public handleRequestBackend = async (request: RequestBackend): Promise<ReplyBackend> => {
-    // TODO: Fetch backend
-    let backend = new ReplyBackend(
-      {
-        name: "zkSync",
-        baseCurrency: "CHF",
-        tokens: [
-          {
-            symbol: "DAI",
-            name: "DAI Stablecoin",
-            decimals: 18,
-          }
-        ]
-      }
-    );
-    return backend;
-  }
-
-
-  /**
-   * Check node sync status
-   * 
-   * @returns True if _in sync_, Sync status if _syncing_.
    */
   private isSyncing = async (): Promise<boolean | Sync> => {
     const sync = await this._provider.send('eth_syncing');
@@ -208,5 +132,166 @@ export class Node {
    */
   private postConnection = async () => {
     this._accounts = await this._provider.listAccounts();
+    this._tokens = await this.retrieveTokens();
+
+    if (config.debug) {
+      this.showInfos();
+    }
+  }
+
+  private showInfos = async () => {
+    const network = await this._provider.getNetwork();
+    console.log(`Network:`);
+    console.log(`  Name: ${network.name}:${network.chainId}`);
+    console.log(`  Provider: ${this._provider.connection}`);
+    console.log(`Swapbox:`);
+    console.log(`  Address: ${this.swapbox.address}`);
+  }
+
+  /**
+   * Retrieve tokens from blockchain
+   * @returns 
+   */
+  private retrieveTokens = async (): Promise<Token[]> => {
+    const tokens: Token[] = [];
+
+    const supportTokenAddresses = await this.swapbox.supportedTokensList();
+
+    for (const tokenAddress of supportTokenAddresses) {
+      const token = ERC20__factory.connect(tokenAddress, this._provider.getSigner());
+      const symbol = await token.symbol();
+      const decimals = await token.decimals();
+      const pairAddress = await this.factory.getPair(tokenAddress, this._baseToken);
+      tokens.push({
+        symbol: symbol,
+        address: tokenAddress,
+        pairAddress: pairAddress,
+        decimals: decimals,
+      });
+    }
+
+    return tokens;
+  }
+
+  /**
+   * Get token object from its address
+   */
+  private getToken(tokenAddress: string): Token {
+    return this._tokens.filter(t => t.address == tokenAddress)[0];
+  }
+
+  /**
+   * Wait for connection to node.
+   *
+   * This needs to be called after the constructor. You can specify the amount
+   * of tries and the period between tries in the config.ts file.
+   * It will try to reach the node until connection or timeout.
+   */
+  public waitForConnection = () => {
+    return new Promise<void>(async (resolve, reject) => {
+      if (await this.isListening()) {
+        await this.postConnection();
+        resolve();
+      } else {
+        this.reconnectRoutine(resolve, reject);
+      }
+    });
+  }
+
+  /**
+   * Returns a list of Address representing the accounts of the node.
+   *
+   * The account in first position should be unlocked and representing the
+   * machineAddress
+   *
+   * @return Address[] accounts
+   */
+  public accounts = (): string[] => {
+    return this._accounts;
+  }
+
+  /**
+   * Update the `_isSyncing` state of the node and returns the status
+   * according to the `INodeStatus` interface.
+   *
+   * @return Promise<INodeStatus> The status of the node.
+   */
+  public getStatus = async (): Promise<BlockchainStatus> => {
+    const isSyncing = await this.isSyncing();
+    const blockNumber = await this._provider.getBlockNumber()
+    const blockTimestamp = (await this._provider.getBlock(blockNumber)).timestamp;
+
+    return {
+      current_block: {
+        number: blockNumber,
+        timestamp: blockTimestamp,
+      },
+      syncing: isSyncing,
+    };
+  }
+
+  /**
+   * Get prices of supported tokens
+   *
+   * @return Promise<Price[]> An array of token prices.
+   */
+  public getPrices = async (): Promise<Price[]> => {
+    const reserves = await this.pricefeed.getReserves(this._baseToken);
+
+    const prices: Price[] = [];
+    for (const reserve of reserves) {
+      const token = this.getToken(reserve.token);
+      const buyPrice = computeBuyPrice(token.decimals, reserve.reserve0, reserve.reserve1);
+      const sellPrice = computeSellPrice(token.decimals, reserve.reserve0, reserve.reserve1);
+      // TODO: get fees
+      const fees = 0;
+
+      prices.push({
+        symbol: reserve.token,
+        buy_price: buyPrice,
+        buy_fee: fees,
+        sell_price: sellPrice,
+        sell_fee: fees,
+      });
+    }
+
+    return prices;
+  }
+
+  public handleRequestOrder = async (request: RequestOrder): Promise<ReplyOrder> => {
+    if (request.request === "buy") {
+      await this.swapbox.buyEth(
+        request.order.amount_in,
+        request.order.minimum_amount_out,
+        request.order.client,
+        0, // FIX: add deadline to request
+      );
+    } else {
+      console.log("order not supported");
+    }
+
+    const reply = new ReplyOrder(true);
+    return reply;
+  }
+
+  public handleRequestBackend = async (request: RequestBackend): Promise<ReplyBackend> => {
+    if (config.debug) {
+      console.log(request.request);
+    }
+    // TODO: Fetch backend
+    const backend = new ReplyBackend(
+      {
+        name: "zkSync",
+        baseCurrency: "CHF",
+        tokens: [
+          {
+            symbol: "DAI",
+            name: "DAI Stablecoin",
+            decimals: 18,
+          }
+        ]
+      }
+    );
+    return backend;
   }
 }

@@ -18,7 +18,7 @@ import { Node } from "./node";
 
 import { cpuCurrentSpeed, cpuTemperature } from "systeminformation";
 import config from "./config";
-import { ReplyBackend, ReplyOrder, ReplyStatus } from "./messaging/messages/replies";
+import { ReplyBackend, ReplyOrder, ReplyPrices, ReplyStatus } from "./messaging/messages/replies";
 import { SystemStatus } from "./messaging/messages/replies/status";
 import { RequestBackend, RequestOrder } from "./messaging/messages/requests";
 import { Messenger } from "./messaging/messenger";
@@ -31,11 +31,6 @@ const getSystemStatus = async (): Promise<SystemStatus> => {
 
 async function main() {
   const node = await Node.connect(config.websocket_provider.url);
-  if (config.debug) {
-    const network = await node.network();
-    console.log(`Connected to network: ${network.name}:${network.chainId}`);
-  }
-
   const messenger = new Messenger({
     onRequestBackend: (request: RequestBackend): Promise<ReplyBackend> => {
       return node.handleRequestBackend(request);
@@ -55,10 +50,12 @@ async function main() {
   };
   statusUpdates();
 
+  const publicPricesPeriodMs = config.messenger.publish.prices_period_s * 1000;
   const pricesUpdate = async () => {
-    
-    let prices: any;
-    messenger.sendPrices(prices);
+    const prices = await node.getPrices();
+    const reply = new ReplyPrices(prices);
+    messenger.sendPrices(reply);
+    setTimeout(pricesUpdate, publicPricesPeriodMs);
   }
   pricesUpdate();
 }

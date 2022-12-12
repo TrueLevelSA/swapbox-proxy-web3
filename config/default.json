@@ -12,14 +12,18 @@
   "messenger": {
     "publish": {
       "url": "tcp://0.0.0.0:5556",
-      "status_period_s": 5
+      "status_period_s": 5,
+      "prices_period_s": 5
     },
     "request": {
       "url": "tcp://0.0.0.0:5557"
     }
   },
   "contracts": {
-    "swapbox": "0x0000000000000000000000000000000000000000",
-    "pricefeed": "0x0000000000000000000000000000000000000000"
+    "swapbox": "0x6AadB348417A0182Fed43513239a6F56fFf93957",
+    "pricefeed": "0xF59f171250Dc6fB2d9530187149EcfeF311249a1",
+    "factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+    "router": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+    "base_token": "0xb4272071ecadd69d933adcd19ca99fe80664fc08"
   }
 }

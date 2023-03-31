@@ -60,7 +60,7 @@ export class Node {
 
   /**
    * Returns a connected Node.
-   * 
+   *
    * @param providerUrl websocket address of the provider.
    * @returns A node
    */
@@ -72,8 +72,8 @@ export class Node {
 
   /**
    * Gives network infos
-   * 
-   * @returns 
+   *
+   * @returns
    */
   private isSyncing = async (): Promise<boolean | Sync> => {
     const sync = await this._provider.send('eth_syncing');
@@ -82,7 +82,7 @@ export class Node {
 
   /**
    * Check node listening status.
-   * 
+   *
    * @returns True if is listening, False if not.
    */
   private isListening = async (): Promise<boolean> => {
@@ -92,7 +92,7 @@ export class Node {
 
   /**
    * Tries to reconnect to the node until count is reached.
-   * 
+   *
    * @param resolve Callback when connected
    * @param reject Callback when timeout
    * @param tryCount Amount of tries before reject
@@ -143,7 +143,7 @@ export class Node {
 
   /**
    * Retrieve tokens from blockchain
-   * @returns 
+   * @returns
    */
   private retrieveTokens = async (): Promise<Token[]> => {
     const tokens: Token[] = [];
@@ -243,7 +243,8 @@ export class Node {
       const fees = 0;
 
       prices.push({
-        symbol: reserve.token,
+        token: reserve.token,
+        symbol: token.symbol,
         buy_price: buyPrice,
         buy_fee: fees,
         sell_price: sellPrice,

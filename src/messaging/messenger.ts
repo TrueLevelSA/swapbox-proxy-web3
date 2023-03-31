@@ -47,7 +47,7 @@ export class Messenger {
 
   /**
    * Publish status.
-   * 
+   *
    * @param status
    */
   public sendStatus = (status: ReplyStatus) => {
@@ -63,7 +63,7 @@ export class Messenger {
   /**
    * Fetch new price and send them through zmq.
    */
-  public sendPrices = async (prices: ReplyPrices) => {
+  public sendPrices = (prices: ReplyPrices) => {
     const msg = [Messenger.TOPIC_PRICES, JSON.stringify(prices)];
 
     if (config.debug) {
@@ -76,7 +76,7 @@ export class Messenger {
   /**
    * Handle incoming messages.
    *
-   * @param message 
+   * @param message
    */
   public handleIncomingMessage = async (message: Buffer) => {
     if(config.debug) {

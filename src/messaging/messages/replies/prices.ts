@@ -1,14 +1,15 @@
 import { BigNumberish } from "ethers";
 import { ReplyBase } from "./base";
 
-export interface Price{
-  symbol: string
-  buy_price: BigNumberish
-  buy_fee: BigNumberish
-  sell_price: BigNumberish
-  sell_fee: BigNumberish
+export interface Price {
+    readonly token: string,
+    readonly symbol: string,
+    readonly buy_price: BigNumberish,
+    readonly buy_fee: BigNumberish,
+    readonly sell_price: BigNumberish,
+    readonly sell_fee: BigNumberish,
 }
 
 export interface ReplyPrices extends ReplyBase {
-  prices: Price[]
+    readonly prices: {[key: string]: Price}
 }

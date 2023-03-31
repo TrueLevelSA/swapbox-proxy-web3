@@ -22,6 +22,7 @@ import { ReplyBackend, ReplyOrder, ReplyPrices, ReplyStatus } from "./messaging/
 import { SystemStatus } from "./messaging/messages/replies/status";
 import { RequestBackend, RequestOrder } from "./messaging/messages/requests";
 import { Messenger } from "./messaging/messenger";
+import { BigNumber } from 'ethers';
 
 const getSystemStatus = async (): Promise<SystemStatus> => {
   const speed = await cpuCurrentSpeed();
@@ -53,7 +54,14 @@ async function main() {
   const publicPricesPeriodMs = config.messenger.publish.prices_period_s * 1000;
   const pricesUpdate = async () => {
     const prices = await node.getPrices();
-    const reply: ReplyPrices = {success: true, prices: prices};
+    const reply: ReplyPrices = {success: true, prices: prices.reduce((d, price) => ({[price.token]: {
+        token: price.token,
+        symbol: price.symbol,
+        buy_price: BigNumber.from(price.buy_price).add(5).toString(),
+        buy_fee: price.buy_fee.toString(),
+        sell_price: price.sell_price.toString(),
+        sell_fee: price.sell_fee.toString(),
+    }, ...d}), {})};
     messenger.sendPrices(reply);
     setTimeout(pricesUpdate, publicPricesPeriodMs);
   }

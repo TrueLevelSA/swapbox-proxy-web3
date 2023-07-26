@@ -2,94 +2,101 @@
 
 
 
-README
-------
+# README
 
-A connector to connect to parity light node with web3x and send over ZMQ.
+A connector to connect to parity light node with ethers.js and send data over ZMQ.
 
-### Dependencies
 
-- [vyper v0.1.0b4](https://github.com/ethereum/vyper/releases/tag/v0.1.0-beta.4r)
-- [geth](https://github.com/ethereum/go-ethereum)
-
-### Install
-
-```bash
-# Init and clone smart-contract submodule
-git submodule update --init
+## Install
 
 # Install project dependencies and build
+```shell
 yarn install && yarn build
 ```
 
-The first account returned by `eth_accounts` response will be used in order to sign transactions.
-In order to make the signing work, you must unlock this account.
-And in order to be able to create orders, you must call `swapbox.addMachine(<address>)` first.
-You need to unlock the `account[0]` of your node, this is the `machineAddress` that will be used in 
+The first account returned by the `eth_accounts` response is used to sign transactions.
+To make the signing work, you must unlock this account.
 
-### Running
+To be able to create orders, you must call `swapbox.addMachine(<address>)` first.
+You need to unlock the `account[0]` of your node,
+this is the `machineAddress` that will be used in the contracts.
 
-Ensure an ethereum client is running
+## Configuration
 
-```bash
+The default configuration is in `./config/default.json`.
+
+You can add your own JSON configuration file in the `./config` folder.  
+To use your config file, specify its name (without the `.json` extension)
+via the `NODE_CONFIG_ENV` when running the Web3 proxy.
+
+> For development, configurations files other than the `default.json` are ignored from git.
+
+For example if you have the config file `./config/custom.json`,
+then you can the Web3 proxy with:
+
+```shell
+NODE_CONFIG_ENV=custom yarn start
+```
+
+## Running
+
+Ensure an ethereum client is running, such as parity.
+
+```shell
 parity --light
 ```
 
-You can edit `config.json` at your tastes before starting.
+Start the Web3 proxy
 
-Start the connector
-
-```bash
+```shell
 yarn start
 ```
 
-### Private network
+## Private network (hardhat)
 
-For testing purpose.
+You can run the proxy over hardhat for tests and development.
 
-Run geth with the following:
+> You will need an [Alchemy key](https://docs.alchemy.com/docs/alchemy-quickstart-guide#1key-create-an-alchemy-key).  
+> The key will be passed accordingly via the `SWAPBOX_ALCHEMY_KEY`.
 
-```bash
-geth --dev --ws --wsport=8546 --wsorigins="*" --wsapi personal,eth,net,rpc,shh,web3 --allow-insecure-unlock
+1. Run a hardhat network with your Alchemy key (from a separate terminal):
+
+   ```shell
+   SWAPBOX_ALCHEMY_KEY="<alchemy_key>" yarn hardhat node
+   ```
+
+2. Deploy the contracts on the hardhat network.
+
+   > This must be repeated every time the network is restarted.
+
+   ```shell
+   yarn deploy
+   ```
+
+3. Start the Web3 proxy with `nodemon` (auto-reload on change):
+
+   ```shell
+   yarn start:dev
+   ```
+
+   > If you get an `UnhandledPromiseRejectionWarning: Error: call revert exception`,
+   > It is likely one of the smart contract address has changed.  
+   > Check the output of `yarn deploy` or the log of `hardhat node` for the correct addresses.
+   > Then update the values in your config file (by default: `config/default.json`).
+
+
+### Tests
+
+Hardhat is also used to run tests related to the smart contracts.
+
+> Unlike when running the Web3 proxy, no need to manually start the hardhat network.  
+> However you will still need your alchemy key.
+
+```shell
+SWAPBOX_ALCHEMY_KEY="<alchemy_key>" yarn test
 ```
 
-And then run this from another terminal `smart-contract/` folder:
-
-```bash
-cd smart-contract/
-geth --exec "loadScript('scripts/unlock.js')" attach ipc://tmp/geth.ipc
-```
-
-It will unlock 9 more accounts (so 10 in total) and prefund them with 1000 ETH each.
-
-You will also need to deploy the contract:
-
-```bash
-yarn deploy
-```
-
-You can start with nodemon using:
-
-```bash
-yarn start:dev
-```
-
-### Accounts management
-
-Generate key:
-
-```
-yarn genkey
-```
-
-Add key (needs ethereum client running)
-
-```
-yarn addkey
-```
-
-TO-DO
------
+## TO-DO
 
 - Point machine operator fee to value set in smart contract
 - Add ZMQ authentication (https://github.com/zeromq/pyzmq/blob/master/examples/security/ironhouse.py??)

@@ -1,3 +1,0 @@
-[submodule "smart-contract"]
-	path = smart-contract
-	url = git@gitlab.com:TrueLevel/swapbox/contracts-solidity.git

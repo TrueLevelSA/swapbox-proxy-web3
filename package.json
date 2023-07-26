@@ -6,17 +6,18 @@
   "scripts": {
     "accounts:genkey": "node ./dist/accounts/createAccount.js",
     "accounts:addkey": "node ./dist/accounts/addAccount.js",
-    "build:types": "cd smart-contract/ && yarn install && yarn compile && cd .. && cp -R smart-contract/typechain src/",
+    "build:contracts": "hardhat compile",
     "build:src": "tsc --version && tsc",
-    "build": "yarn build:types && yarn build:src",
+    "build": "yarn build:contracts && yarn build:src",
     "buildAndStart": "yarn build && yarn start",
     "clean:src": "rm -rf dist/",
-    "clean:types": "rm -rf src/typechain/",
-    "clean": "yarn clean:src && yarn clean:types",
+    "clean:contracts": "hardhat clean && rm -rf src/typechain contracts/deps contracts/docs hardhat-cache",
+    "clean": "yarn clean:src && yarn clean:contracts",
     "cleanAndBuild": "yarn clean && yarn build",
-    "deploy": "cd smart-contract/ && yarn run deploy",
+    "deploy": "yarn hardhat run scripts/deploy_swapbox.ts --network localhost",
     "start": "node ./dist",
-    "start:dev": "nodemon ./dist/index.js"
+    "start:dev": "nodemon ./dist/index.js",
+    "test": "hardhat test"
   },
   "dependencies": {
     "@types/bip39": "^2.4.2",

@@ -1,3 +1,12 @@
+# npm
 /node_modules
+
+# typescript
 /dist
+
+# hardhat
+/contracts/docs
+/contracts/deps
+/hardhat-artifacts
+/hardhat-cache
 /src/typechain

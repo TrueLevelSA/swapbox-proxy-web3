@@ -20,8 +20,8 @@
     }
   },
   "contracts": {
-    "swapbox": "0x6AadB348417A0182Fed43513239a6F56fFf93957",
-    "pricefeed": "0xF59f171250Dc6fB2d9530187149EcfeF311249a1",
+    "swapbox": "0x9155497EAE31D432C0b13dBCc0615a37f55a2c87",
+    "pricefeed": "0xc1EeD9232A0A44c2463ACB83698c162966FBc78d",
     "factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
     "router": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
     "base_token": "0xb4272071ecadd69d933adcd19ca99fe80664fc08"

@@ -106,7 +106,7 @@ describe('PriceFeed', () => {
     )
 
     const reservesAfter = await pricefeed.getReserves(tokenStable.address);
-    expect(reservesAfter[0].reserve0).to.eq(reservesBefore[0].reserve0.add(amountIn));
-    expect(reservesAfter[0].reserve1).to.be.below(reservesBefore[0].reserve1.sub(amountOutMin));
+    expect(reservesAfter[0].reserve1).to.equal(reservesBefore[0].reserve1.add(amountIn));
+    expect(reservesAfter[0].reserve0).to.be.below(reservesBefore[0].reserve0.sub(amountOutMin));
   });
 });

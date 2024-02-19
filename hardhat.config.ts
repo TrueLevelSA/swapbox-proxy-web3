@@ -65,4 +65,6 @@ const config: HardhatUserConfig = {
     }
 };
 
+require("./tasks/add_machine");
+
 export default config;

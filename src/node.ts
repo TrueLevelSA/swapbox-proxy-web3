@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+import { Signer } from "ethers";
 import { WebSocketProvider } from "@ethersproject/providers";
 import config from "./config";
 import { ReplyBackend, ReplyOrder } from "./messaging/messages/replies";
@@ -24,6 +26,7 @@ import { RequestBackend, RequestOrder } from "./messaging/messages/requests";
 import { ERC20__factory, PriceFeed, PriceFeed__factory, SwapboxUniswapV2, SwapboxUniswapV2__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Router02, UniswapV2Router02__factory } from "./typechain";
 import { outputSyncingFormatter, Sync } from "./types/eth";
 import { computeBuyPrice, computeSellPrice } from "./utils/prices";
+
 
 /**
  * Node allows to send and retrieve to/from the Ethereum node.
@@ -50,12 +53,29 @@ export class Node {
     this._accounts = [];
     this._tokens = [];
 
-    const signer = this._provider.getSigner();
-    this.swapbox = SwapboxUniswapV2__factory.connect(config.contracts.swapbox, signer);
-    this.pricefeed = PriceFeed__factory.connect(config.contracts.pricefeed, signer);
-    this.factory = UniswapV2Factory__factory.connect(config.contracts.factory, signer);
-    this.router = UniswapV2Router02__factory.connect(config.contracts.router, signer);
+    const deployer = this._provider.getSigner();
+    const machine = this._provider.getSigner(1);
+
+    // Using an IIFE for async operations
+    (async () => {
+      console.log("Deployer address: ", await this.getAddress(deployer));
+      console.log("Machine address: ", await this.getAddress(machine));
+    })().catch(console.error); // Handle errors
+
+    this.swapbox = SwapboxUniswapV2__factory.connect(config.contracts.swapbox, machine);
+    this.pricefeed = PriceFeed__factory.connect(config.contracts.pricefeed, machine);
+    this.factory = UniswapV2Factory__factory.connect(config.contracts.factory, machine);
+    this.router = UniswapV2Router02__factory.connect(config.contracts.router, machine);
     this._baseToken = config.contracts.base_token;
+  }
+
+  /**
+   * Get address from Signer.
+   *
+   * @returns Address.
+   */
+  private getAddress = async (signer: Signer): Promise<string> => {
+    return await signer.getAddress();
   }
 
   /**
@@ -235,7 +255,11 @@ export class Node {
 
     const prices: Price[] = [];
     for (const reserve of reserves) {
+      console.log("reserve: ", reserve);
       const token = this.getToken(reserve.token);
+      const baseToken = this.getToken(this._baseToken);
+      console.log("decimals: ", token.decimals);
+      console.log("token: ", token);
       const buyPrice = computeBuyPrice(token.decimals, reserve.reserve0, reserve.reserve1);
       const sellPrice = computeSellPrice(token.decimals, reserve.reserve0, reserve.reserve1);
 
@@ -263,13 +287,13 @@ export class Node {
    */
   public handleRequestOrder = async (request: RequestOrder): Promise<ReplyOrder> => {
     let confirm = false;
-
-    if (request.request === "buy") {
+    if (request.method === "buy") {
       await this.swapbox.buyEth(
-        request.order.amount_in,
-        request.order.minimum_amount_out,
-        request.order.client,
+        request.fiat_amount,
+        request.minimum_buy_amount,
+        request.client_address,
         0, // FIX: add deadline to request
+        {gasLimit: 100000}
       );
       // TODO: Check tx went through without revert and event was triggered.
       confirm = true;

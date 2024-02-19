@@ -93,12 +93,12 @@ export class Messenger {
     }
 
     let reply: ReplyBackend | ReplyOrder | undefined;
-    switch (request.request) {
-      case RequestBase.REQUEST_BACKEND: {
+    switch (request.method) {
+      case RequestBase.METHOD_BACKEND: {
         reply = await this._rc.onRequestBackend(request as RequestBackend);
         break;
       }
-      case RequestBase.REQUEST_ORDER: {
+      case RequestBase.METHOD_ORDER: {
         reply = await this._rc.onRequestOrder(request as RequestOrder);
         break;
       }

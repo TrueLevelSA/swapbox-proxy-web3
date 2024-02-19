@@ -3,16 +3,13 @@ import { RequestBase } from "./base";
 
 export class RequestOrder extends RequestBase {
   constructor(
-    readonly request: string,
-    readonly order: {
-      method: string,
-      blockchain: string,
-      token: string,
-      amount_in: BigNumber,
-      minimum_amount_out: BigNumber,
-      client: string
-    }
+    readonly method: string,
+      // blockchain: string,
+    readonly token: string,
+    readonly fiat_amount: BigNumber,
+    readonly client_address: string,
+    readonly minimum_buy_amount: BigNumber
   ){
-    super(request);
+    super(method);
   }
 }

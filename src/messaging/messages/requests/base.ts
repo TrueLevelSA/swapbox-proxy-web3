@@ -1,6 +1,6 @@
 export class RequestBase {
-  public static REQUEST_BACKEND = "backend";
-  public static REQUEST_ORDER = "order";
+  public static METHOD_BACKEND = "backend";
+  public static METHOD_ORDER = "buy";
 
-  constructor(readonly request: string) {}
+  constructor(readonly method: string) {}
 }

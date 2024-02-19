@@ -67,14 +67,19 @@ contract SwapboxUniswapV2 is Swapbox {
         path[1] = WETH;
 
         require(path[path.length - 1] == WETH, 'UniswapV2Router: INVALID_PATH');
-
+        console.log("before swapExactTokensForETH");
         uint[] memory amounts = _router.swapExactTokensForETH(
             amountInLessFee,
             amountOutMin,
             path,
             to,
-            deadline
+            block.timestamp
         );
+        console.log("after swap");
+        // Log each element of the amounts array
+        for (uint i = 0; i < amounts.length; i++) {
+            console.log("Amount at index", i, amounts[i]);
+        }
 
         emit EtherBought(to, amounts[0], amounts[1]);
     }

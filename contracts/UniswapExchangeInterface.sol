@@ -16,7 +16,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-4/token/ERC20/IERC20.sol";
 // Solidity Interface
 
 interface UniswapExchangeInterface is IERC20 {

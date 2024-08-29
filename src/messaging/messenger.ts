@@ -16,9 +16,9 @@
 
 import * as zmq from "zeromq";
 import config from "../config";
-import { ReplyBackend, ReplyOrder, ReplyPrices, ReplyStatus } from "./messages/replies";
+import { ReplyBackend, ReplyOrder, ReplyPrices, ReplyStatus, ReplyPrice } from "./messages/replies";
 import { ERROR_BAD_REQUEST } from "./messages/replies/base";
-import { RequestBackend, RequestBase, RequestOrder } from "./messages/requests";
+import { RequestBackend, RequestBase, RequestOrder, RequestPrice } from "./messages/requests";
 
 /**
  * Interface for handling incoming messages.
@@ -26,6 +26,7 @@ import { RequestBackend, RequestBase, RequestOrder } from "./messages/requests";
 export interface RequestCallbacks{
   onRequestBackend(request: RequestBackend): Promise<ReplyBackend>;
   onRequestOrder(request: RequestOrder): Promise<ReplyOrder>;
+  onRequestPrice(request: RequestPrice): Promise<ReplyPrice>;
 }
 
 export class Messenger {
@@ -92,7 +93,7 @@ export class Messenger {
       return;
     }
 
-    let reply: ReplyBackend | ReplyOrder | undefined;
+    let reply: ReplyBackend | ReplyOrder | ReplyPrice | undefined;
     switch (request.method) {
       case RequestBase.METHOD_BACKEND: {
         reply = await this._rc.onRequestBackend(request as RequestBackend);
@@ -102,6 +103,10 @@ export class Messenger {
         reply = await this._rc.onRequestOrder(request as RequestOrder);
         break;
       }
+      case RequestBase.METHOD_PRICEQUOTE: {
+        reply = await this._rc.onRequestPrice(request as RequestPrice);
+        break;
+      }
       default: {
         this.rep.send(JSON.stringify({success: false, error: ERROR_BAD_REQUEST}));
         return;
@@ -109,6 +114,9 @@ export class Messenger {
     }
 
     if (reply) {
+      if (config.debug) {
+        console.log(`ZMQ_SEND_REPLY: ${JSON.stringify(reply)}`);
+      }
       this.rep.send(JSON.stringify(reply));
     }
   }

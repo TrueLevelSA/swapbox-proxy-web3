@@ -40,5 +40,10 @@ task("add_machine", "Add Machine")
     await tx.wait();
 
     console.log(`Machine ${test_account_1.address} added`);
-  });
 
+    const fee_tx = await swapbox.connect(deployer_account)
+      .updateMachineFees(await test_account_1.getAddress(), 200, 300);
+    await tx.wait();
+
+    console.log(`2% buy fee and 3% sell fee set for ${test_account_1.address}`);
+  });

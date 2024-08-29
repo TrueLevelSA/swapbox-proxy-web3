@@ -23,6 +23,8 @@ import { ERC20, ERC20PresetMinterPauser, ERC20__factory, IWETH, IWETH__factory, 
 // @ts-ignore
 import { DeployHelper, longDeadline, UNISWAP_FACTORY, UNISWAP_ROUTER, WETH_ADDRESS } from './utils';
 
+const emptyBytes = ethers.utils.formatBytes32String("");
+
 chai.use(solidity);
 const { expect } = chai;
 
@@ -68,29 +70,29 @@ describe('PriceFeed', () => {
   });
 
   it('getReserves:length', async () => {
-    let reserves = await pricefeed.getReserves(tokenStable.address);
+    let reserves = await pricefeed.getReserves();
     expect(reserves).to.have.lengthOf(0);
 
-    await swapbox.addToken(tokenWETH.address);
+    await swapbox.addToken(tokenWETH.address, emptyBytes);
 
-    reserves = await pricefeed.getReserves(tokenStable.address);
+    reserves = await pricefeed.getReserves();
     expect(reserves).to.have.lengthOf(1);
   });
 
   it('getReserves:values', async () => {
-    const reserves = await pricefeed.getReserves(tokenStable.address);
+    const reserves = await pricefeed.getReserves();
     const pricefeedReserves = [reserves[0].reserve0, reserves[0].reserve1];
     const baseReserves = [baseLiquidityToken, baseLiquidityWETH];
 
     // checking reserves without considering order.
     expect(pricefeedReserves).to.have.deep.members(baseReserves);
-    expect(reserves[0].token).to.equal(tokenWETH.address);
     expect(reserves[0].pair).to.equal(pair.address);
   });
 
   it('getReserves:changes after buy order', async () => {
-    const reservesBefore = await pricefeed.getReserves(tokenStable.address);
+    const reservesBefore = await pricefeed.getReserves();
 
+    // const amountIn = ethers.utils.parseUnits("10", 6);
     const amountIn = ethers.utils.parseEther("10");
     const amountOutMin = ethers.utils.parseEther("0.0049");
     await swapbox.authorizeMachine(machine.address);
@@ -105,8 +107,14 @@ describe('PriceFeed', () => {
       }
     )
 
-    const reservesAfter = await pricefeed.getReserves(tokenStable.address);
-    expect(reservesAfter[0].reserve1).to.equal(reservesBefore[0].reserve1.add(amountIn));
-    expect(reservesAfter[0].reserve0).to.be.below(reservesBefore[0].reserve0.sub(amountOutMin));
+    const reservesAfter = await pricefeed.getReserves();
+
+    if (tokenWETH.address > tokenStable.address){
+      expect(reservesAfter[0].reserve0).to.equal(reservesBefore[0].reserve0.add(amountIn));
+      expect(reservesAfter[0].reserve1).to.be.below(reservesBefore[0].reserve1.sub(amountOutMin));
+    } else{
+      expect(reservesAfter[0].reserve1).to.equal(reservesBefore[0].reserve1.add(amountIn));
+      expect(reservesAfter[0].reserve0).to.be.below(reservesBefore[0].reserve0.sub(amountOutMin));
+    }
   });
 });

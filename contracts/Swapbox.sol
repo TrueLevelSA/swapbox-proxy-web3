@@ -18,13 +18,16 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
+import "openzeppelin-4/access/Ownable.sol";
+import "openzeppelin-4/token/ERC20/IERC20.sol";
+import "openzeppelin-4/token/ERC20/utils/SafeERC20.sol";
+import "openzeppelin-4/utils/structs/EnumerableSet.sol";
+import "./libs/Path.sol";
 
 abstract contract Swapbox is Ownable {
+    using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using Path for bytes;
 
     // Represents a fee.
     struct Fee {
@@ -34,7 +37,7 @@ abstract contract Swapbox is Ownable {
     }
 
     // Deadline timeout (s.) for txs.
-    uint256 public constant DEADLINE_TIMEOUT = 120;
+    // uint256 public constant DEADLINE_TIMEOUT = 120; (unused?)
 
     //TODO: improve fees
     // Maximum fees, represents 100% fees.
@@ -53,12 +56,21 @@ abstract contract Swapbox is Ownable {
     mapping(address => bool) private _authorizedMachines;
 
     // Set of supported tokens.
-    EnumerableSet.AddressSet private _supportedTokens;
+    EnumerableSet.AddressSet internal _supportedTokens;
+
+    // Set of used tokens (all tokens inc intermediary)
+    EnumerableSet.AddressSet internal _usedTokens;
+
+    // Set of used pairs (all tokens inc intermediary)
+    EnumerableSet.AddressSet internal _allPairs;
+
+    // Token swap routing
+    mapping(address => bytes) internal _tokenPath;
 
     event MachineAuthorized(address indexed machineAddress);
     event MachineRevoked(address indexed machineAddress);
-    event EtherBought(address indexed customerAddress, uint256 fiatAmount, uint256 cryptoAmount);
-    event EtherSold(address indexed customerAddress, uint256 cryptoAmount, uint256 fiatAmount);
+    event CryptoBought(address indexed customerAddress, uint256 fiatAmount, uint256 cryptoAmount, uint256 fee);
+    event EtherSold(address indexed customerAddress, uint256 cryptoAmount, uint256 fiatAmount, uint256 fee);
     event EtherRefunded(address indexed customerAddress, uint256 cryptoAmount);
     event EtherReceived(address indexed customerAddress, uint256 cryptoAmount);
 
@@ -118,8 +130,9 @@ abstract contract Swapbox is Ownable {
      *
      * @param tokenAddress  The address of the token contract (warning: make sure it's compliant)
      */
-    function addToken(address tokenAddress) external onlyOwner returns (bool) {
-        return _supportedTokens.add(tokenAddress);
+    function addToken(address tokenAddress, bytes memory path) external onlyOwner returns (bool) {
+        _usedTokens.add(tokenAddress);
+        return _addToken(tokenAddress, path);
     }
 
     /**
@@ -128,6 +141,7 @@ abstract contract Swapbox is Ownable {
      * @param tokenAddress The address of the token contract
      */
     function removeToken(address tokenAddress) external onlyOwner returns (bool) {
+        delete _tokenPath[tokenAddress];
         return _supportedTokens.remove(tokenAddress);
     }
 
@@ -166,6 +180,56 @@ abstract contract Swapbox is Ownable {
     }
 
     /**
+     * @dev Return the used token set in an array.
+     *
+     * - Elements are enumerated in O(n). No guarantees are made on the ordering.
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can
+     * be quite expensive. This is designed to stay be used by view accessors that
+     * are queried without any gas fees. Developers should keep in mind that this
+     * function has an unbounded cost, and using it as part of a state-changing function
+     * may render the function uncallable if the set grows to a point where copying
+     * to memory consumes too much gas to fit in a block.
+     */
+    function allTokensList() external view returns (address[] memory) {
+        return _usedTokens.values();
+    }
+
+    /**
+     * @dev Return the used pair set in an array.
+     *
+     * - Elements are enumerated in O(n). No guarantees are made on the ordering.
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can
+     * be quite expensive. This is designed to stay be used by view accessors that
+     * are queried without any gas fees. Developers should keep in mind that this
+     * function has an unbounded cost, and using it as part of a state-changing function
+     * may render the function uncallable if the set grows to a point where copying
+     * to memory consumes too much gas to fit in a block.
+     */
+    function allPairsList() external view returns (address[] memory) {
+        return _allPairs.values();
+    }
+
+    /**
+     * @dev Return the trade path for a given token.
+     *
+     * @param token The address of the token contract
+     */
+    function tokenPath(address token) external view returns (bytes memory) {
+        return _tokenPath[token];
+    }
+
+    /**
+     * @dev Return the fee for a given machine.
+     *
+     * @param machineAddress The address of the BTM
+     */
+    function getMachineFee(address machineAddress) external view returns (Fee memory) {
+        return _machineFees[machineAddress];
+    }
+
+    /**
      * @dev Allows the owner to withdraw eth from the contract to the owner address
      *
      * @param amount Amount of of eth to withdraw (in wei)
@@ -180,7 +244,7 @@ abstract contract Swapbox is Ownable {
      * @param amount Amount of of tokens to withdraw (in wei)
      */
     function withdrawBaseTokens(uint256 amount) external onlyOwner {
-        _baseToken.transfer(owner(), amount);
+        _baseToken.safeTransfer(owner(), amount);
     }
 
     /**
@@ -238,6 +302,20 @@ abstract contract Swapbox is Ownable {
     }
 
     /**
+     * @dev Swap an exact amount of its own base tokens for tokens, which will be
+     * transferred to the user.
+     *
+     * @param   token           Token address
+     * @param   amountIn        Cash in
+     * @param   amountOutMin    Min amount user should receive, revert if not able to do so
+     * @param   to              Address that will receive ETH
+     * @param   deadline        Revert if deadline is over when processing
+     */
+    function buyTokens(address token, uint256 amountIn, uint256 amountOutMin, address to, uint deadline) external onlyAuthorizedMachine {
+        _buyTokens(token, amountIn, amountOutMin, to, deadline);
+    }
+
+    /**
      * @dev Swap ETH for an exact amount of base tokens. User must have sent the
      * ETH in advance for this to work. User will be refunded all its remaining
      * balance.
@@ -275,7 +353,22 @@ abstract contract Swapbox is Ownable {
     /**
      * @dev Must be implemented by concrete Swapbox instance.
      */
+    function _addToken(address tokenAddress, bytes memory path) internal virtual returns (bool);
+
+    /**
+     * @dev Must be implemented by concrete Swapbox instance.
+     */
+    // function _updatePath(address tokenAddress, bytes memory path) internal virtual;
+
+    /**
+     * @dev Must be implemented by concrete Swapbox instance.
+     */
     function _buyEth(uint256 amountIn, uint256 amountOutMin, address to, uint deadline) internal virtual;
+
+    /**
+     * @dev Must be implemented by concrete Swapbox instance.
+     */
+    function _buyTokens(address token, uint256 amountIn, uint256 amountOutMin, address to, uint deadline) internal virtual;
 
     /**
      * @dev Must be implemented by concrete Swapbox instance.

@@ -28,6 +28,8 @@ import { ERC20PresetMinterPauser } from '../../src/typechain/ERC20PresetMinterPa
 chai.use(solidity);
 const { expect } = chai;
 
+const BLANK_PATH = new Uint8Array(0);
+
 describe('SwapBox', async () => {
     let deployer: SignerWithAddress;
     let user: SignerWithAddress;
@@ -37,8 +39,10 @@ describe('SwapBox', async () => {
     let factory: UniswapV2Factory;
     let router: UniswapV2Router02;
     let tokenStable: ERC20PresetMinterPauser;
+    let tokenUSDT: ERC20PresetMinterPauser;
     let tokenWETH: IWETH;
     let tokenWETH20: ERC20;
+    let tokenBTC: ERC20PresetMinterPauser;
 
 
     before(async () => {
@@ -46,6 +50,12 @@ describe('SwapBox', async () => {
         tokenWETH = IWETH__factory.connect(WETH_ADDRESS, deployer);
         tokenWETH20 = ERC20__factory.connect(WETH_ADDRESS, deployer);
         tokenStable = await DeployHelper.deployToken(deployer, "Random Stable Coin", "RSC");
+        tokenUSDT = await DeployHelper.deployToken(deployer, "Tether USD", "USDT");
+        tokenBTC = await DeployHelper.deployToken(deployer, "Bitcoin", "tBTC");
+
+        console.log("Deployed Stable: ", tokenStable.address);
+        console.log("Deployed USDT: ", tokenUSDT.address);
+        console.log("Deployed tBTC: ", tokenBTC.address);
 
         // forking uniswap from mainnet with hardhat
         factory = UniswapV2Factory__factory.connect(UNISWAP_FACTORY, deployer);
@@ -57,6 +67,15 @@ describe('SwapBox', async () => {
         const baseLiquidityWETH = ethers.utils.parseEther("10");
         const baseLiquidityToken = ethers.utils.parseEther("20000");
         await DeployHelper.createPairETH(deployer, factory, router, tokenStable, baseLiquidityToken, baseLiquidityWETH);
+
+        // create another test pair
+        const baseLiquidityBTC = ethers.utils.parseEther("1");
+        const btcPair = await DeployHelper.createPairETH(deployer, factory, router, tokenBTC, baseLiquidityBTC, baseLiquidityWETH);
+
+        // tBTC USDT pair + Stable USDT pair
+        const usdtbtcPair = await DeployHelper.createPair(deployer, factory, router, tokenUSDT, baseLiquidityToken, tokenBTC, baseLiquidityBTC);
+        const stableusdtPair = await DeployHelper.createPair(deployer, factory, router, tokenStable, baseLiquidityToken, tokenUSDT, baseLiquidityToken);
+
     })
 
     beforeEach(async () => {
@@ -70,43 +89,111 @@ describe('SwapBox', async () => {
     })
 
     it('should correctly add a new supported token', async () => {
-        const monero = await DeployHelper.deployToken(deployer, "Monero", "XMR");
+        const alephium = await DeployHelper.deployToken(deployer, "Alephium", "ALPH");
+        const pair = await DeployHelper.createPair(deployer, factory, router, tokenStable, ethers.utils.parseEther("20000"), alephium, ethers.utils.parseEther("2000"));
 
-        // static call should confirm it will work
-        const added = await swapbox.callStatic.addToken(monero.address);
+        // static call should confirm it will work (TO-DO: sometimes doesnt work?)
+        const added = await swapbox.callStatic.addToken(alephium.address, BLANK_PATH);
         expect(added).to.be.true;
 
-        await swapbox.addToken(monero.address);
+        await swapbox.addToken(alephium.address, BLANK_PATH);
         const tokenCount = await swapbox.getTokenCount();
         expect(tokenCount).to.equal(1);
 
         const tokens = await swapbox.supportedTokensList();
         expect(tokens).to.have.length(1);
-        expect(tokens.at(0)).to.equal(monero.address);
+        expect(tokens.at(0)).to.equal(alephium.address);
+    });
+
+    it('should correctly add a token path', async () => {
+        const tBTCpath = ethers.utils.solidityPack(
+        ["address", "uint24", "address", "uint24", "address"],
+        [tokenStable.address, "3000", tokenWETH.address, "3000", tokenBTC.address]);
+
+        await swapbox.addToken(tokenBTC.address, tBTCpath);
+
+        const tokenCount = await swapbox.getTokenCount();
+        expect(tokenCount).to.equal(1);
+
+        const tokens = await swapbox.supportedTokensList();
+        expect(tokens).to.have.length(1);
+        expect(tokens.at(0)).to.equal(tokenBTC.address);
+    });
+
+    it('should correctly update a token path', async () => {
+
+        const tBTCpathOld = ethers.utils.solidityPack(
+        ["address", "uint24", "address", "uint24", "address"],
+        [tokenStable.address, "3000", tokenWETH.address, "3000", tokenBTC.address]);
+
+        // static call should confirm it will work
+        const oldadded = await swapbox.callStatic.addToken(tokenBTC.address, tBTCpathOld);
+        expect(oldadded).to.be.true;
+
+        await swapbox.addToken(tokenBTC.address, tBTCpathOld);
+
+        const tBTCpathNew = ethers.utils.solidityPack(
+        ["address", "uint24", "address", "uint24", "address"],
+        [tokenStable.address, "3000", tokenUSDT.address, "3000", tokenBTC.address]);
+
+        // static call should confirm it will work
+        const newadded = await swapbox.callStatic.addToken(tokenBTC.address, tBTCpathNew);
+        expect(newadded).to.be.false;
+
+        const update = await swapbox.addToken(tokenBTC.address, tBTCpathNew,
+            {
+                gasLimit: 250000
+            });
+
+        const newPath = await swapbox.tokenPath(tokenBTC.address);
+        expect(newPath).to.equal(tBTCpathNew);
+
+        const tokenCount = await swapbox.getTokenCount();
+        expect(tokenCount).to.equal(1);
+
+        const tokens = await swapbox.supportedTokensList();
+        expect(tokens).to.have.length(1);
+        expect(tokens.at(0)).to.equal(tokenBTC.address);
     });
 
     it('should remove an existing supported token', async () => {
-        const monero = await DeployHelper.deployToken(deployer, "Monero", "XMR");
-        await swapbox.addToken(monero.address);
+        await swapbox.addToken(tokenWETH20.address, BLANK_PATH);
 
         // static call should confirm it will work
-        const removed = await swapbox.callStatic.removeToken(monero.address);
+        const removed = await swapbox.callStatic.removeToken(tokenWETH20.address);
         expect(removed).to.be.true;
 
-        await swapbox.removeToken(monero.address);
+        await swapbox.removeToken(tokenWETH20.address);
         const tokenCount = await swapbox.getTokenCount();
         expect(tokenCount).to.equal(0);
     });
 
     it('should not remove an non-existing token', async () => {
-        const monero = await DeployHelper.deployToken(deployer, "Monero", "XMR");
-        await swapbox.addToken(monero.address);
+        // const monero = await DeployHelper.deployToken(deployer, "Monero", "XMR");
+        await swapbox.addToken(tokenWETH20.address, BLANK_PATH);
+
+
+        // static call should confirm it will work
         const removed = await swapbox.callStatic.removeToken(ethers.constants.AddressZero)
         expect(removed).to.be.false;
 
         await swapbox.removeToken(ethers.constants.AddressZero);
         const tokenCount = await swapbox.getTokenCount();
         expect(tokenCount).to.equal(1);
+    });
+
+    it('should not add token when pair doesnt exist', async () => {
+        const monero = await DeployHelper.deployToken(deployer, "Monero", "XMR");
+
+        // static call should confirm it will fail
+        // const added = await swapbox.callStatic.addToken(monero.address, BLANK_PATH)
+        // expect(added).to.revert;
+        await expect(swapbox.addToken(monero.address, BLANK_PATH))
+            .to.be.revertedWith("SwapboxUniswapV2: pair doesn't exist and no path set");
+
+        // await swapbox.addToken(monero.address, BLANK_PATH);
+        const tokenCount = await swapbox.getTokenCount();
+        expect(tokenCount).to.equal(0);
     });
 
     it('should emit a `MachineAuthorized` event when authorizing a machine', async () => {
@@ -172,7 +259,7 @@ describe('SwapBox', async () => {
         expect(tokenBalanceDecrease).to.eq(amountIn);
     });
 
-    it('emits a `EtherBought` event after a buyEth order', async () => {
+    it('emits a `CryptoBought` event after a buyEth order', async () => {
         const amountIn = ethers.utils.parseEther("10");
         const amountOutMin = ethers.utils.parseEther("0.0049");
 
@@ -189,7 +276,7 @@ describe('SwapBox', async () => {
                     gasLimit: 250000
                 }
             )
-        ).to.emit(swapbox, 'EtherBought');
+        ).to.emit(swapbox, 'CryptoBought');
         // can't use .withArgs because we can't know deterministically the amount out.
 
     });

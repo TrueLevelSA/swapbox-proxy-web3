@@ -22,7 +22,7 @@ import "./Swapbox.sol";
 import "./UniswapExchangeInterface.sol";
 
 contract SwapboxUniswapV1 is Swapbox {
-
+    using EnumerableSet for EnumerableSet.AddressSet;
     UniswapExchangeInterface private _baseExchange;
 
     /**
@@ -30,6 +30,10 @@ contract SwapboxUniswapV1 is Swapbox {
      */
     constructor(address baseCurrency_, address baseExchange_) Swapbox(baseCurrency_){
         _baseExchange = UniswapExchangeInterface(baseExchange_);
+    }
+
+    function _addToken(address tokenAddress, bytes memory path) internal override returns (bool) {
+        return _supportedTokens.add(tokenAddress);
     }
 
     function _buyEth(uint256 amountFiat, uint256 minValue, address to, uint deadline) internal override {
@@ -47,7 +51,25 @@ contract SwapboxUniswapV1 is Swapbox {
             to
         );
 
-        emit EtherBought(to, amountFiat, ethBought);
+        emit CryptoBought(to, amountFiat, ethBought, fee);
+    }
+
+    function _buyTokens(address token, uint256 amountFiat, uint256 minValue, address to, uint deadline) internal override {
+        uint256 fee = (amountFiat * _machineFees[msg.sender].buy) / MAX_FEE;
+        uint256 amountLessFee = amountFiat - fee;
+
+        // approve exchange for Swapbox
+        _baseToken.approve(address(_baseExchange), amountLessFee);
+
+        //call uniswap
+        uint256 tokensBought = _baseExchange.tokenToEthTransferInput(
+            amountLessFee,
+            minValue,
+            deadline,
+            to
+        );
+
+        emit CryptoBought(to, amountFiat, tokensBought, fee);
     }
 
     function _sellEth(uint256 amountFiat, uint256 minValue, address to, uint deadline) internal override {
@@ -64,6 +86,6 @@ contract SwapboxUniswapV1 is Swapbox {
             to
         );
 
-        emit EtherSold(to, amountFiat, ethBought);
+        emit EtherSold(to, amountFiat, ethBought, fee);
     }
 }

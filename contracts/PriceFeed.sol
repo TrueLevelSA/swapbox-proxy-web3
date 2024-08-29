@@ -22,7 +22,6 @@ pragma solidity ^0.8.9;
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-
 interface Token {
     function balanceOf(address who) external view returns (uint256);
 }
@@ -39,7 +38,6 @@ contract PriceFeed {
     struct TokenReserve {
         uint112 reserve0;
         uint112 reserve1;
-        address token;
         address pair;
     }
 
@@ -55,17 +53,24 @@ contract PriceFeed {
         _factory = IUniswapV2Factory(factoryAddress);
     }
 
-    function getReserves(address baseToken) external view returns(TokenReserve[] memory) {
-        address[] memory tokens = _swapbox.supportedTokensList();
-        TokenReserve[] memory reserves = new TokenReserve[](tokens.length);
+    function getReserves() external view returns(TokenReserve[] memory) {
+        address[] memory allpairs = _swapbox.allPairsList();
 
-        address token;
-        for (uint i = 0; i < tokens.length; i++) {
-            token = tokens[i];
-            IUniswapV2Pair pair = IUniswapV2Pair(_factory.getPair(baseToken, tokens[i]));
-           (uint112 r0, uint112 r1, )  = pair.getReserves();
-            reserves[i] = TokenReserve(r0, r1, token, address(pair));
+        TokenReserve[] memory reserves = new TokenReserve[](allpairs.length);
+
+        for (uint i = 0; i< allpairs.length; i++){
+            if (allpairs[i] != address(0)) {
+                IUniswapV2Pair pair = IUniswapV2Pair(allpairs[i]);
+                (uint112 r0, uint112 r1, )  = pair.getReserves();
+                reserves[i] = TokenReserve(r0, r1, address(pair));
+            } else {
+                reserves[i] = TokenReserve(0, 0, address(0));
+            }
         }
         return reserves;
+    }
+
+    function getFees() external view returns(Swapbox.Fee memory) {
+        return _swapbox.getMachineFee(msg.sender);
     }
 }

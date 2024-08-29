@@ -23,8 +23,6 @@ interface Config {
   contracts: {
     swapbox: string,
     pricefeed: string,
-    factory: string,
-    router: string,
     base_token: string,
   }
 }
@@ -52,8 +50,6 @@ const config: Config = {
   contracts: {
     swapbox: nodeConfig.get<string>('contracts.swapbox'),
     pricefeed: nodeConfig.get<string>('contracts.pricefeed'),
-    factory: nodeConfig.get<string>('contracts.factory'),
-    router: nodeConfig.get<string>('contracts.router'),
     base_token: nodeConfig.get<string>('contracts.base_token'),
   }
 };
